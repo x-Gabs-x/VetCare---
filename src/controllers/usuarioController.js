@@ -57,17 +57,6 @@ const atualizarUsuario = asyncHandler(async (req, res) => {
     return res.status(404).json({ erro: 'Usuario nao encontrado.' });
   }
 
-  const ehDono = req.usuario.id === String(usuario._id);
-  const ehAdmin = req.usuario.perfil === 'administrador';
-
-  if (!ehDono && !ehAdmin) {
-    return res.status(403).json({ erro: 'Voce so pode editar os seus proprios dados.' });
-  }
-
-  if ((perfil || typeof ativo === 'boolean') && req.usuario.perfil !== 'administrador') {
-    return res.status(403).json({ erro: 'Apenas administradores podem alterar perfil ou status do usuario.' });
-  }
-
   if (nome) usuario.nome = nome;
   if (telefone) usuario.telefone = telefone;
   if (perfil) usuario.perfil = perfil;
