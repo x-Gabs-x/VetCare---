@@ -54,14 +54,14 @@ vetcare-backend/
 
 | Método | Endpoint         | Protegido?              | Descrição                                            |
 |--------|------------------|--------------------------|-------------------------------------------------------|
-| POST   | /usuarios        | Público                 | Cadastra um novo usuário (tutor, vet, recepcionista)  |
+| POST   | /usuarios        | Admin ou veterinário    | Cadastra um novo usuário                                |
 | POST   | /auth/login      | Público                 | Autentica e retorna o token JWT                       |
-| GET    | /usuarios        | Admin                   | Lista todos os usuários (aceita `?perfil=`)            |
-| GET    | /usuarios/:id    | Admin                   | Consulta um usuário específico                         |
-| PUT    | /usuarios/:id    | Autenticado (dono/admin)| Atualiza dados; só admin altera `perfil`/`ativo`        |
-| DELETE | /usuarios/:id    | Admin                   | Remove um usuário                                       |
+| GET    | /usuarios        | Admin ou veterinário    | Lista todos os usuários (aceita `?perfil=`)            |
+| GET    | /usuarios/:id    | Admin ou veterinário    | Consulta um usuário específico                         |
+| PUT    | /usuarios/:id    | Admin ou veterinário    | Atualiza dados de um usuário                           |
+| DELETE | /usuarios/:id    | Admin ou veterinário    | Remove um usuário                                      |
 
-### Exemplo — cadastrar usuário
+### Exemplo — cadastrar usuário (admin ou veterinário)
 
 ```bash
 curl -X POST http://localhost:3000/usuarios \
@@ -99,17 +99,13 @@ curl http://localhost:3000/usuarios \
 
 ## Como os outros integrantes usam este módulo
 
-Para proteger as rotas dos outros módulos (pets, consultas/vacinas,
-agendamentos), basta importar o middleware `auth.js`:
+As rotas de usuários, pets, consultas e agendamentos exigem token JWT e
+aceitam somente os perfis `administrador` e `veterinario`:
 
 ```js
 const { verificarToken, autorizar } = require('../middlewares/auth');
 
-// Exige apenas estar logado
-router.get('/pets', verificarToken, listarPets);
-
-// Exige estar logado E ter um dos perfis informados
-router.delete('/pets/:id', verificarToken, autorizar('veterinario', 'administrador'), removerPet);
+router.use(verificarToken, autorizar('administrador', 'veterinario'));
 ```
 
 Depois de autenticado, `req.usuario` fica disponível em qualquer rota
