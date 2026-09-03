@@ -2,22 +2,20 @@ const express = require('express');
 
 const {
     criarConsulta,
+    listarTodasConsultas,
     listarConsultasPorPet,
 } = require('../controllers/consultaController');
 
-const {
-    verificarToken,
-    autorizar,
-} = require('../middlewares/auth');
-
 const router = express.Router();
-
-router.use(verificarToken);
 
 router.post(
     '/',
-    autorizar('veterinario'),
     criarConsulta
+);
+
+router.get(
+    '/',
+    listarTodasConsultas
 );
 
 router.get(
