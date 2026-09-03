@@ -2,12 +2,7 @@ const Agendamento = require('../models/Agendamento');
 const asyncHandler = require('../utils/asyncHandler');
 const { STATUS_VALIDOS } = require('../models/Agendamento');
 
-/**
- * Verifica se já existe um agendamento no mesmo pet/veterinário/data/horário
- * que ainda esteja "ativo" (não cancelado).
- * Se "ignorarId" for passado, ignora esse próprio registro na busca
- * (usado na atualização, pra não comparar o agendamento consigo mesmo).
- */
+
 async function existeConflito({ veterinario, data, horario, ignorarId }) {
   const filtro = {
     veterinario,
@@ -47,8 +42,7 @@ const criarAgendamento = asyncHandler(async (req, res) => {
 
 const listarAgendamentos = asyncHandler(async (req, res) => {
   const agendamentos = await Agendamento.find()
-    // TODO: reativar .populate('pet', 'nome especie raca') assim que o
-    // model Pet existir (depois do merge da feature/pets do Lucas Vinicius)
+  
     .populate('veterinario', 'nome email');
 
   return res.json(agendamentos);
@@ -56,8 +50,6 @@ const listarAgendamentos = asyncHandler(async (req, res) => {
 
 const buscarAgendamentoPorId = asyncHandler(async (req, res) => {
   const agendamento = await Agendamento.findById(req.params.id)
-    // TODO: reativar .populate('pet', 'nome especie raca') assim que o
-    // model Pet existir (depois do merge da feature/pets do Lucas Vinicius)
     .populate('veterinario', 'nome email');
 
   if (!agendamento) {
@@ -81,7 +73,7 @@ const atualizarAgendamento = asyncHandler(async (req, res) => {
     });
   }
 
-  // só verifica conflito se a pessoa estiver de fato mudando dia/horário/veterinário
+  
   const vaiMudarHorario = data || horario || veterinario;
   if (vaiMudarHorario) {
     const conflito = await existeConflito({
