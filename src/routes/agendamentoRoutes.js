@@ -10,8 +10,8 @@ const { verificarToken, autorizar } = require('../middlewares/auth');
 
 const router = express.Router();
 
-// Todas as rotas de agendamento exigem login (qualquer perfil autenticado)
-router.use(verificarToken);
+// Somente administradores e veterinarios podem acessar os agendamentos.
+router.use(verificarToken, autorizar('administrador', 'veterinario'));
 
 router.post('/', criarAgendamento);
 
@@ -19,8 +19,8 @@ router.get('/', listarAgendamentos);
 
 router.get('/:id', buscarAgendamentoPorId);
 
-router.put('/:id', autorizar('veterinario', 'recepcionista'), atualizarAgendamento);
+router.put('/:id', atualizarAgendamento);
 
-router.delete('/:id', autorizar('veterinario', 'recepcionista'), cancelarAgendamento);
+router.delete('/:id', cancelarAgendamento);
 
 module.exports = router;

@@ -6,7 +6,10 @@ const {
   atualizarUsuario,
   removerUsuario,
 } = require('../controllers/usuarioController');
+const { verificarToken, autorizar } = require('../middlewares/auth');
 const router = express.Router();
+
+router.use(verificarToken, autorizar('administrador', 'veterinario'));
 
 router.post('/', cadastrarUsuario);
 
