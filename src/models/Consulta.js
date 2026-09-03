@@ -15,9 +15,9 @@ const consultaSchema = new mongoose.Schema(
             required: [true, 'O veterinário responsável e obrigatorio']
         },
 
-        diagnostico: {
+        motivoConsulta: {
             type: String,
-            required: [true, 'O diagnostico e obrigatorio'],
+            required: [true, 'O motivo da consulta e obrigatorio'],
             trim: true
         },
 

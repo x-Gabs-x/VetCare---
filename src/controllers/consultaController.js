@@ -6,47 +6,27 @@ const Usuario = require('../models/Usuario');
 
 const asyncHandler = require('../utils/asyncHandler');
 
-const PERFIS_VISAO_GERAL = [
-  'veterinario',
-  'recepcionista',
-  'administrador',
-];
-
-function usuarioPodeAcessarPet(usuario, pet) {
-  if (!usuario || !pet) {
-    return false;
-  }
-
-  if (PERFIS_VISAO_GERAL.includes(usuario.perfil)) {
-    return true;
-  }
-
-  if (usuario.perfil === 'tutor') {
-    return String(pet.tutor) === String(usuario.id);
-  }
-
-  return false;
-}
-
 const criarConsulta = asyncHandler(async (req, res) => {
   const {
     pet,
-    diagnostico,
+    veterinario,
+    motivoConsulta,
     procedimentos,
     observacoes,
   } = req.body;
 
-  const veterinario = req.usuario.id;
-
-  if (!pet || !diagnostico || !diagnostico.trim()) {
+  if (!pet || !veterinario || !motivoConsulta || !motivoConsulta.trim()) {
     return res.status(400).json({
-      erro: 'Pet e diagnostico sao obrigatorios.',
+      erro: 'Pet, veterinario e motivo da consulta sao obrigatorios.',
     });
   }
 
-  if (!mongoose.Types.ObjectId.isValid(pet)) {
+  if (
+    !mongoose.Types.ObjectId.isValid(pet) ||
+    !mongoose.Types.ObjectId.isValid(veterinario)
+  ) {
     return res.status(400).json({
-      erro: 'ID do pet invalido.',
+      erro: 'ID do pet ou do veterinario invalido.',
     });
   }
 
@@ -77,7 +57,7 @@ const criarConsulta = asyncHandler(async (req, res) => {
 
   if (veterinarioEncontrado.perfil !== 'veterinario') {
     return res.status(403).json({
-      erro: 'O usuario autenticado nao possui perfil de veterinario.',
+      erro: 'O usuario informado nao possui perfil de veterinario.',
     });
   }
 
@@ -90,7 +70,7 @@ const criarConsulta = asyncHandler(async (req, res) => {
   const consulta = await Consulta.create({
     pet,
     veterinario,
-    diagnostico,
+    motivoConsulta,
     procedimentos,
     observacoes,
   });
@@ -112,6 +92,15 @@ const criarConsulta = asyncHandler(async (req, res) => {
   });
 });
 
+const listarTodasConsultas = asyncHandler(async (req, res) => {
+  const consultas = await Consulta.find({})
+    .populate('pet', 'nome especie raca tutor')
+    .populate('veterinario', 'nome email perfil')
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json(consultas);
+});
+
 const listarConsultasPorPet = asyncHandler(async (req, res) => {
   const { petId } = req.params;
 
@@ -129,12 +118,6 @@ const listarConsultasPorPet = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!usuarioPodeAcessarPet(req.usuario, pet)) {
-    return res.status(403).json({
-      erro: 'Voce nao tem permissao para visualizar o prontuario deste pet.',
-    });
-  }
-
   const consultas = await Consulta.find({
     pet: petId,
   })
@@ -146,5 +129,6 @@ const listarConsultasPorPet = asyncHandler(async (req, res) => {
 
 module.exports = {
   criarConsulta,
+  listarTodasConsultas,
   listarConsultasPorPet,
 };
