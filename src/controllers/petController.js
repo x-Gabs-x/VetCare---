@@ -2,26 +2,7 @@ const Pet = require('../models/Pet');
 const Usuario = require('../models/Usuario');
 const asyncHandler = require('../utils/asyncHandler');
 
-const PERFIS_VISAO_GERAL = ['veterinario', 'recepcionista', 'administrador'];
 const CAMPOS_EDITAVEIS = ['nome', 'especie', 'raca', 'idade', 'peso'];
-
-function temVisaoGeral(usuario) {
-  return usuario && PERFIS_VISAO_GERAL.includes(usuario.perfil);
-}
-
-function idDoTutor(pet) {
-  if (!pet || !pet.tutor) return null;
-  return String(pet.tutor._id || pet.tutor);
-}
-
-function usuarioPodeAcessarPet(usuario, pet) {
-  if (!usuario) return false;
-  if (temVisaoGeral(usuario)) return true;
-  if (usuario.perfil === 'tutor') {
-    return idDoTutor(pet) === String(usuario.id);
-  }
-  return false;
-}
 
 async function validarTutor(tutorId) {
   if (!tutorId) {
@@ -62,24 +43,7 @@ function aplicarCamposEditaveis(pet, body) {
 }
 
 const cadastrarPet = asyncHandler(async (req, res) => {
-  const { nome, especie, raca, idade, peso } = req.body;
-  let tutorId;
-
-  if (req.usuario.perfil === 'tutor') {
-    tutorId = req.usuario.id;
-
-    if (req.body.tutor && String(req.body.tutor) !== String(req.usuario.id)) {
-      return res.status(403).json({
-        erro: 'Tutor so pode cadastrar pets vinculados ao proprio usuario.',
-      });
-    }
-  } else if (temVisaoGeral(req.usuario)) {
-    tutorId = req.body.tutor;
-  } else {
-    return res.status(403).json({
-      erro: 'Acesso negado. Perfil sem permissao para cadastrar pets.',
-    });
-  }
+  const { nome, especie, raca, idade, peso, tutor: tutorId } = req.body;
 
   await validarTutor(tutorId);
 
@@ -98,19 +62,7 @@ const cadastrarPet = asyncHandler(async (req, res) => {
 });
 
 const listarPets = asyncHandler(async (req, res) => {
-  let filtro;
-
-  if (req.usuario.perfil === 'tutor') {
-    filtro = { tutor: req.usuario.id };
-  } else if (temVisaoGeral(req.usuario)) {
-    filtro = {};
-  } else {
-    return res.status(403).json({
-      erro: 'Acesso negado. Perfil sem permissao para visualizar pets.',
-    });
-  }
-
-  const pets = await Pet.find(filtro)
+  const pets = await Pet.find({})
     .populate('tutor', 'nome email telefone perfil')
     .sort({ createdAt: -1 });
 
@@ -128,12 +80,6 @@ const buscarPetPorId = asyncHandler(async (req, res) => {
     return res.status(404).json({ erro: 'Pet nao encontrado.' });
   }
 
-  if (!usuarioPodeAcessarPet(req.usuario, pet)) {
-    return res.status(403).json({
-      erro: 'Voce nao tem permissao para visualizar este pet.',
-    });
-  }
-
   return res.status(200).json(pet);
 });
 
@@ -145,19 +91,7 @@ const atualizarPet = asyncHandler(async (req, res) => {
     return res.status(404).json({ erro: 'Pet nao encontrado.' });
   }
 
-  if (!usuarioPodeAcessarPet(req.usuario, pet)) {
-    return res.status(403).json({
-      erro: 'Voce nao tem permissao para editar este pet.',
-    });
-  }
-
-  if (req.usuario.perfil === 'tutor') {
-    if (req.body.tutor && String(req.body.tutor) !== idDoTutor(pet)) {
-      return res.status(403).json({
-        erro: 'Tutor nao pode transferir o pet para outro usuario.',
-      });
-    }
-  } else if (temVisaoGeral(req.usuario) && req.body.tutor) {
+  if (req.body.tutor) {
     await validarTutor(req.body.tutor);
     pet.tutor = req.body.tutor;
   }
@@ -175,12 +109,6 @@ const removerPet = asyncHandler(async (req, res) => {
 
   if (!pet) {
     return res.status(404).json({ erro: 'Pet nao encontrado.' });
-  }
-
-  if (!usuarioPodeAcessarPet(req.usuario, pet)) {
-    return res.status(403).json({
-      erro: 'Voce nao tem permissao para remover este pet.',
-    });
   }
 
   await pet.deleteOne();
