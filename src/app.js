@@ -3,9 +3,8 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
-const petRoutes = require('./routes/petRoutes');
-const consultaRoutes = require('./routes/consultaRoutes');
-const errorHandler = require('./middlewares/errorHandler');               
+const agendamentoRoutes = require('./routes/agendamentoRoutes');
+const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 
@@ -19,8 +18,7 @@ app.get('/', (req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/usuarios', usuarioRoutes);
-app.use('/pets', petRoutes);
-app.use('/consultas', consultaRoutes);
+app.use('/agendamentos', agendamentoRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota nao encontrada.' });
