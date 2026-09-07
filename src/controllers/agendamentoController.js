@@ -16,7 +16,7 @@ async function existeConflito({ veterinario, data, horario, ignorarId }) {
   }
 
   const conflito = await Agendamento.findOne(filtro);
-  return !!conflito; // transforma em true/false
+  return !!conflito;
 }
 
 const criarAgendamento = asyncHandler(async (req, res) => {
