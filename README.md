@@ -1,5 +1,34 @@
 # VetCare API — Testes de Requisições
 
+## Execução local
+
+Requisitos: Node.js, npm e uma instância MongoDB disponível.
+
+```bash
+npm install
+npm start
+```
+
+Primeiro. crie um arquivo `.env` na raiz do projeto e implemente o enviado na atividade;
+
+## Rotas disponíveis
+
+Todas as rotas abaixo usam JSON. Com exceção de `POST /usuarios`, as rotas protegidas exigem `Authorization: Bearer <token>`.
+
+| Módulo | Rotas | Acesso |
+| --- | --- | --- |
+| Autenticação | `POST /auth/login` | Público |
+| Usuários | `POST /usuarios` | Público; cria tutor por padrão |
+| Usuários | `GET /usuarios`, `GET /usuarios/:id` | Administrador ou veterinário |
+| Usuários | `PUT /usuarios/:id` | Próprio usuário ou administrador |
+| Usuários | `DELETE /usuarios/:id` | Administrador |
+| Pets | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/pets` | Administrador ou veterinário |
+| Consultas | `POST /consultas`, `GET /consultas`, `GET /consultas/:petId` | Administrador ou veterinário |
+| Agendamentos | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/agendamentos` | Administrador ou veterinário |
+| Vacinas | `POST /vacinas`, `GET /vacinas/:petId`, `GET /vacinas/lembretes/proximos` | Autenticado; gravação e lembretes exigem administrador, veterinário ou recepcionista |
+
+Os filtros de usuários `perfil` e `nome` podem ser combinados em `GET /usuarios`.
+
 ## 1. Autenticação
 
 A API possui autenticação através de login, utilizando e-mail e senha.
@@ -542,6 +571,8 @@ Bearer Token
 
 Atualiza os dados de um usuário existente utilizando seu ID.
 
+O próprio usuário pode atualizar seu nome, telefone e senha. O administrador também pode atualizar qualquer usuário e alterar os campos `perfil` e `ativo`.
+
 Neste teste são atualizados:
 
 * Nome
@@ -582,10 +613,7 @@ POST http://localhost:3000/usuarios
 
 ### Authorization
 
-```text
-Bearer Token
-{{token}}
-```
+O cadastro pode ser realizado sem token. Quando feito por um administrador, o campo `perfil` informado é respeitado; sem administrador, o novo usuário é criado como `tutor`.
 
 ### Corpo da requisição
 
@@ -611,7 +639,7 @@ tutor
 
 ### Perfil utilizado no teste
 
-**Administrador**
+**Público ou administrador**
 
 ### Resultado esperado
 
@@ -672,7 +700,7 @@ A API deve excluir o usuário temporário informado.
 
 # 9. Acesso como Tutor
 
-Ao realizar login utilizando uma conta com o perfil **tutor**, o usuário **não possui acesso aos endpoints protegidos da API**.
+Ao realizar login utilizando uma conta com o perfil **tutor**, o usuário não possui acesso às rotas administrativas de Pets, Consultas e Agendamentos. Ele pode atualizar o próprio cadastro e visualizar as vacinas dos próprios pets.
 
 ### Credenciais de teste — Tutor
 
@@ -683,7 +711,7 @@ Ao realizar login utilizando uma conta com o perfil **tutor**, o usuário **não
 }
 ```
 
-Ao tentar acessar endpoints protegidos, a API deve bloquear a requisição.
+Ao tentar acessar uma rota administrativa, a API deve bloquear a requisição.
 
 ### Resultado do teste
 
@@ -695,7 +723,7 @@ Ao tentar acessar endpoints protegidos, a API deve bloquear a requisição.
 }
 ```
 
-Esse comportamento demonstra o controle de acesso baseado no perfil do usuário.
+Esse comportamento demonstra o controle de acesso baseado no perfil do usuário. O cadastro de novos usuários continua público e cria tutores por padrão.
 
 ---
 
@@ -710,10 +738,10 @@ Esse comportamento demonstra o controle de acesso baseado no perfil do usuário.
 | GET    | `/usuarios?nome=...`              | Buscar por nome          | Administrador ou veterinario |
 | GET    | `/usuarios?perfil=tutor&nome=...` | Buscar por perfil e nome | Administrador ou veterinario |
 | GET    | `/usuarios`                       | Listar usuários como veterinario | Veterinario |
-| PUT    | `/usuarios/:id`                   | Atualizar usuário        | Administrador |
-| POST   | `/usuarios`                       | Criar usuário            | Administrador |
+| PUT    | `/usuarios/:id`                   | Atualizar próprio cadastro ou qualquer usuário | Próprio usuário ou administrador |
+| POST   | `/usuarios`                       | Criar usuário            | Público ou administrador |
 | DELETE | `/usuarios/:id`                   | Excluir usuário          | Administrador |
-| POST   | `/usuarios`                       | Tentar criar usuário     | Veterinario — acesso negado |
+| POST   | `/usuarios`                       | Criar usuário como veterinário | Público; perfil final tutor |
 
 ---
 
@@ -727,11 +755,11 @@ Possui acesso às operações de gerenciamento e consulta de usuários.
 
 ### Veterinario
 
-Possui acesso às operações de consulta de usuários, mas não pode criar, atualizar ou excluir cadastros.
+Possui acesso às operações de consulta de usuários. Também pode atualizar o próprio cadastro, mas não pode alterar seu perfil ou status ativo.
 
 ### Tutor
 
-Possui acesso restrito e não pode executar as operações administrativas protegidas.
+Possui acesso restrito: pode atualizar o próprio cadastro e visualizar as vacinas dos próprios pets, mas não pode executar as operações administrativas protegidas.
 
 ### Fluxo de teste
 
@@ -751,8 +779,8 @@ Possui acesso restrito e não pode executar as operações administrativas prote
 7. Administrador → acesso permitido em todas as operações de usuários
        ↓
 8. Veterinario → acesso permitido apenas nas operações de consulta
-       ↓
-9. Tutor → acesso negado
+      ↓
+    9. Tutor → acesso restrito às próprias informações
 ```
 
 ---
@@ -770,3 +798,262 @@ As requisições podem ser executadas utilizando o **Postman**.
 Para os endpoints protegidos, é necessário primeiro realizar o login e salvar o token através do script apresentado neste documento.
 
 Os resultados das requisições estão registrados em texto e formato JSON nas respectivas seções deste documento.
+
+---
+
+# 13. Testes de conflito de agendamento
+
+## 13.1 Validação do índice no schema
+
+O model `Agendamento` possui um índice único composto pelos campos `veterinario`, `data` e `horario`. O índice considera apenas os agendamentos com status `agendado`, `confirmado` ou `concluido`.
+
+A definição foi validada com:
+
+```powershell
+node --check src/models/Agendamento.js
+```
+
+Também foi verificado que o schema contém:
+
+```json
+{
+  "veterinario": 1,
+  "data": 1,
+  "horario": 1
+}
+```
+
+## 13.2 Validação do índice no MongoDB
+
+Depois de iniciar a API com `npm run dev`, a conexão com o MongoDB foi estabelecida com sucesso:
+
+```text
+[MongoDB] Conectado com sucesso.
+[Servidor] Rodando em http://localhost:3000
+```
+
+A consulta dos índices da coleção `agendamentos` confirmou o índice único no banco:
+
+```json
+{
+  "key": {
+    "veterinario": 1,
+    "data": 1,
+    "horario": 1
+  },
+  "name": "veterinario_1_data_1_horario_1",
+  "unique": true,
+  "partialFilterExpression": {
+    "status": {
+      "$in": [
+        "agendado",
+        "confirmado",
+        "concluido"
+      ]
+    }
+  }
+}
+```
+
+## 13.3 Criar agendamento
+
+### Requisição
+
+```http
+POST http://localhost:3000/agendamentos
+```
+
+### Corpo enviado
+
+```json
+{
+  "pet": "6a978a94cfef52b60ce2b466",
+  "veterinario": "6a98ddbd701d6ba2eb4f85bd",
+  "data": "2026-09-10",
+  "horario": "14:30",
+  "observacoes": "Teste de conflito"
+}
+```
+
+### Resultado obtido
+
+**Status HTTP:** `201 Created`
+
+O agendamento foi criado com sucesso, com status inicial `agendado`.
+
+## 13.4 Repetir agendamento no mesmo horário
+
+Foi enviada novamente a mesma requisição, mantendo o mesmo veterinário, data e horário.
+
+### Resultado obtido
+
+**Status HTTP:** `409 Conflict`
+
+```json
+{
+  "erro": "Ja existe um agendamento para esse veterinario nesse mesmo dia e horario."
+}
+```
+
+Esse resultado confirma que a API impede dois agendamentos ativos para o mesmo veterinário no mesmo dia e horário. A validação antecipada do controller retornou o conflito antes da criação do segundo registro; o índice único do MongoDB também garante a regra em situações de concorrência.
+
+## 13.5 Cancelar agendamento e reutilizar horário
+
+Depois do teste de conflito, o agendamento criado foi cancelado.
+
+### Requisição
+
+```http
+DELETE http://localhost:3000/agendamentos/6a9e37d5f3a0d364992f4d40
+```
+
+### Resultado obtido
+
+**Status HTTP:** `200 OK`
+
+```json
+{
+  "mensagem": "Agendamento cancelado com sucesso.",
+  "agendamento": {
+    "_id": "6a9e37d5f3a0d364992f4d40",
+    "status": "cancelado"
+  }
+}
+```
+
+Em seguida, a mesma requisição de criação foi enviada novamente com o mesmo veterinário, data e horário.
+
+### Resultado obtido
+
+**Status HTTP:** `201 Created`
+
+```json
+{
+  "pet": "6a978a94cfef52b60ce2b466",
+  "veterinario": "6a98ddbd701d6ba2eb4f85bd",
+  "data": "2026-09-10T00:00:00.000Z",
+  "horario": "14:30",
+  "status": "agendado",
+  "observacoes": "Teste de conflito",
+  "_id": "6a9e391543680af2fce1099a3"
+}
+```
+
+Esse resultado confirma que o índice parcial permite reutilizar o horário depois que o agendamento anterior é cancelado.
+
+### Observação sobre o formato da data
+
+Para evitar diferenças de horário e garantir que a comparação represente o mesmo dia, envie o campo `data` no formato:
+
+```text
+YYYY-MM-DD
+```
+
+Exemplo:
+
+```json
+{
+  "data": "2026-09-10"
+}
+```
+
+O uso de um formato completo com horário, como `2026-09-10T15:00:00.000Z`, pode representar um valor diferente no banco e não deve ser utilizado para esse teste de conflito diário.
+
+---
+
+# 14. Testes GraphQL
+
+O Apollo Server foi integrado à API através do endpoint:
+
+```http
+POST http://localhost:3000/graphql
+```
+
+As consultas protegidas devem enviar um token JWT no header:
+
+```http
+Authorization: Bearer TOKEN_GERADO_NO_LOGIN
+```
+
+## 14.1 Consulta GraphQL sem token
+
+### Corpo enviado
+
+```json
+{
+  "query": "{ agendamentos { id data horario status } }"
+}
+```
+
+### Resultado obtido
+
+A requisição foi bloqueada porque nenhum token foi informado.
+
+```json
+{
+  "errors": [
+    {
+      "message": "Context creation failed: Token nao informado."
+    }
+  ]
+}
+```
+
+## 14.2 Consulta GraphQL com usuário tutor
+
+O login do tutor foi realizado com sucesso, mas a consulta foi bloqueada porque o perfil `tutor` não possui permissão para consultar agendamentos.
+
+### Corpo enviado
+
+```json
+{
+  "query": "{ agendamentos { id data horario status } }"
+}
+```
+
+### Resultado obtido
+
+**Status HTTP:** `200 OK`
+
+```json
+{
+  "errors": [
+    {
+      "message": "Acesso negado."
+    }
+  ]
+}
+```
+
+## 14.3 Consulta GraphQL com administrador ou veterinário
+
+A consulta foi realizada com sucesso utilizando um token de um perfil autorizado.
+
+### Corpo enviado
+
+```json
+{
+  "query": "{ agendamentos { id data horario status } }"
+}
+```
+
+### Resultado obtido
+
+**Status HTTP:** `200 OK`
+
+```json
+{
+  "data": {
+    "agendamentos": [
+      {
+        "id": "6a9e391543680af2ce1099a3",
+        "data": "2026-09-10T00:00:00.000Z",
+        "horario": "14:30",
+        "status": "agendado"
+      }
+    ]
+  }
+}
+```
+
+Esses testes confirmam que o GraphQL valida a autenticação JWT e restringe o acesso aos agendamentos conforme o perfil do usuário.

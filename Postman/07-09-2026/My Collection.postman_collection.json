@@ -308,6 +308,194 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "http://localhost:3000/agendamentos/deletando agendamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();\r",
+                  "\r",
+                  "if (!resposta.token) {\r",
+                  "    throw new Error('A resposta não contém token');\r",
+                  "}\r",
+                  "\r",
+                  "pm.environment.set('token', resposta.token);\r",
+                  "\r",
+                  "console.log('Token salvo:', resposta.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"veterinario\": \"6a98ddbd701d6ba2eb4f85bd\",\r\n  \"data\": \"2026-09-10\",\r\n  \"horario\": \"14:30\",\r\n  \"observacoes\": \"Teste de conflito\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/agendamentos/6a9e37d5f3a0d364992f4d40",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "agendamentos",
+                "6a9e37d5f3a0d364992f4d40"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "http://localhost:3000/graphql-Testem sem token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/graphql",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "http://localhost:3000/graphql-Teste com token",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/graphql",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "http://localhost:3000/graphql-teste-tutor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();\r",
+                  "\r",
+                  "if (!resposta.token) {\r",
+                  "    throw new Error('A resposta não contém token');\r",
+                  "}\r",
+                  "\r",
+                  "pm.environment.set('token', resposta.token);\r",
+                  "\r",
+                  "console.log('Token salvo:', resposta.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/graphql",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

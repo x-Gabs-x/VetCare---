@@ -25,10 +25,15 @@ app.use('/agendamentos', agendamentoRoutes);
 app.use('/consultas', consultaRoutes);
 app.use('/vacinas', vacinaRoutes);
 
-app.use((req, res) => {
-  res.status(404).json({ erro: 'Rota nao encontrada.' });
-});
+function registrarMiddlewaresFinais() {
+  app.use((req, res) => {
+    res.status(404).json({ erro: 'Rota nao encontrada.' });
+  });
 
-app.use(errorHandler);
+  app.use(errorHandler);
+}
 
-module.exports = app;
+module.exports = {
+  app,
+  registrarMiddlewaresFinais,
+};

@@ -41,5 +41,15 @@ const agendamentoSchema = new mongoose.Schema(
   }
 );
 
+agendamentoSchema.index(
+  { veterinario: 1, data: 1, horario: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ['agendado', 'confirmado', 'concluido'] },
+    },
+  }
+);
+
 module.exports = mongoose.model('Agendamento', agendamentoSchema);
 module.exports.STATUS_VALIDOS = STATUS_VALIDOS;
