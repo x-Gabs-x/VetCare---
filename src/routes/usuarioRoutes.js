@@ -6,19 +6,17 @@ const {
   atualizarUsuario,
   removerUsuario,
 } = require('../controllers/usuarioController');
-const { verificarToken, autorizar } = require('../middlewares/auth');
+const { verificarToken, autorizar, identificarUsuarioOpcional } = require('../middlewares/auth');
+
 const router = express.Router();
 
-router.use(verificarToken, autorizar('administrador', 'veterinario'));
+router.post('/', identificarUsuarioOpcional, cadastrarUsuario);
 
-router.post('/', cadastrarUsuario);
+router.use(verificarToken);
 
-router.get('/', listarUsuarios);
-
-router.get('/:id', buscarUsuarioPorId);
-
-router.put('/:id', atualizarUsuario);
-
-router.delete('/:id', removerUsuario);
+router.get('/', autorizar('administrador', 'veterinario'), listarUsuarios);
+router.get('/:id', autorizar('administrador', 'veterinario'), buscarUsuarioPorId);
+router.put('/:id', verificarToken, atualizarUsuario); // dono ou admin - verificado dentro do controller
+router.delete('/:id', autorizar('administrador'), removerUsuario);
 
 module.exports = router;

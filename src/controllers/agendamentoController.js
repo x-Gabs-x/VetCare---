@@ -16,7 +16,7 @@ async function existeConflito({ veterinario, data, horario, ignorarId }) {
   }
 
   const conflito = await Agendamento.findOne(filtro);
-  return !!conflito; // transforma em true/false
+  return !!conflito;
 }
 
 const criarAgendamento = asyncHandler(async (req, res) => {
@@ -42,7 +42,7 @@ const criarAgendamento = asyncHandler(async (req, res) => {
 
 const listarAgendamentos = asyncHandler(async (req, res) => {
   const agendamentos = await Agendamento.find()
-  
+    .populate('pet', 'nome especie raca idade peso tutor')
     .populate('veterinario', 'nome email');
 
   return res.json(agendamentos);
@@ -50,6 +50,7 @@ const listarAgendamentos = asyncHandler(async (req, res) => {
 
 const buscarAgendamentoPorId = asyncHandler(async (req, res) => {
   const agendamento = await Agendamento.findById(req.params.id)
+    .populate('pet', 'nome especie raca idade peso tutor')
     .populate('veterinario', 'nome email');
 
   if (!agendamento) {
