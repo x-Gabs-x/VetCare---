@@ -1057,3 +1057,128 @@ A consulta foi realizada com sucesso utilizando um token de um perfil autorizado
 ```
 
 Esses testes confirmam que o GraphQL valida a autenticação JWT e restringe o acesso aos agendamentos conforme o perfil do usuário.
+
+---
+
+# 15. Integração GraphQL para Vacinas
+
+A API também expõe consultas de vacinas no endpoint GraphQL:
+
+```http
+POST http://localhost:3000/graphql
+```
+
+## 15.1 Consultar vacinas de um pet
+
+### Requisição
+
+```json
+{
+  "query": "{ vacinasPorPet(petId: \"ID_DO_PET\") { id tipo dataAplicacao dataPrevistaReforco observacoes pet { id nome } veterinario { id nome } } }"
+}
+```
+
+### Permissões
+
+- `administrador`, `veterinario` e `recepcionista` podem consultar qualquer pet
+- `tutor` pode consultar apenas os pets vinculados ao seu usuário
+
+### Resultado obtido
+
+**Status HTTP:** `200 OK`
+
+```json
+{
+  "data": {
+    "vacinasPorPet": [
+      {
+        "id": "64da2b5a1f8b1d4f00d4f7ad",
+        "tipo": "V10",
+        "dataAplicacao": "2026-08-15T00:00:00.000Z",
+        "dataPrevistaReforco": "2026-11-15T00:00:00.000Z",
+        "observacoes": "Vacina aplicada com retorno em 90 dias",
+        "pet": {
+          "id": "64d9a79b6542ca0b29c8f101",
+          "nome": "Luna"
+        },
+        "veterinario": {
+          "id": "64bf1f7d8a1a2f8b023d9c2a",
+          "nome": "Dr. Lucas"
+        }
+      }
+    ]
+  }
+}
+```
+
+## 15.2 Consultar lembretes de reforço
+
+### Requisição
+
+```json
+{
+  "query": "{ lembretesVacinas(dias: 30) { id tipo dataPrevistaReforco pet { id nome } veterinario { id nome } } }"
+}
+```
+
+### Permissões
+
+Somente perfis de visão geral podem acessar essa consulta:
+
+- `administrador`
+- `veterinario`
+- `recepcionista`
+
+### Resultado obtido
+
+**Status HTTP:** `200 OK`
+
+```json
+{
+  "data": {
+    "lembretesVacinas": [
+      {
+        "id": "64e1f0a5d2f9b7a2d1a9c534",
+        "tipo": "Antirrábica",
+        "dataPrevistaReforco": "2026-09-20T00:00:00.000Z",
+        "pet": {
+          "id": "64d9a79b6542ca0b29c8f101",
+          "nome": "Luna"
+        },
+        "veterinario": {
+          "id": "64bf1f7d8a1a2f8b023d9c2a",
+          "nome": "Dr. Lucas"
+        }
+      }
+    ]
+  }
+}
+```
+
+## 15.3 Erro de permissão para tutor
+
+Quando um tutor tenta consultar as vacinas de um pet que não pertence a ele, a consulta retorna erro de acesso.
+
+### Requisição
+
+```json
+{
+  "query": "{ vacinasPorPet(petId: \"64d9a79b6542ca0b29c8f101\") { id tipo } }"
+}
+```
+
+### Resultado obtido
+
+**Status HTTP:** `200 OK`
+
+```json
+{
+  "errors": [
+    {
+      "message": "Voce nao tem permissao para visualizar as vacinas deste pet."
+    }
+  ]
+}
+```
+
+Esse conjunto de exemplos confirma que o módulo de vacinas no GraphQL retorna corretamente os dados autorizados e preserva as regras de autorização da API REST.
