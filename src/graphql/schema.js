@@ -22,8 +22,20 @@ const typeDefs = `#graphql
     veterinario: Veterinario!
   }
 
+  type Vacina {
+    id: ID!
+    tipo: String!
+    dataAplicacao: String!
+    dataPrevistaReforco: String
+    observacoes: String
+    pet: Pet
+    veterinario: Veterinario
+  }
+
   type Query {
     agendamentos: [Agendamento!]!
+    vacinasPorPet(petId: ID!): [Vacina!]!
+    lembretesVacinas(dias: Int): [Vacina!]!
   }
 `;
 
