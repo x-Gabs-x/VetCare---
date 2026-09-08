@@ -1,32 +1,26 @@
 {
   "info": {
-    "_postman_id": "2b11792b-2e66-4576-af93-f6c38d2f4854",
-    "name": "My Collection",
-    "description": "### Welcome to Postman! This is your first collection. \n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests\n• Test your API in real-world scenarios\n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
+    "_postman_id": "ea4ef9f9-d505-421a-9dc5-7d8ea7ef8e9e",
+    "name": "VetCare API",
+    "description": "Colecao organizada da API VetCare. Execute Login primeiro e selecione o ambiente Vet Care Local.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "48585050",
-    "_collection_link": "https://go.postman.co/collection/48585050-2b11792b-2e66-4576-af93-f6c38d2f4854?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/48585050-ea4ef9f9-d505-421a-9dc5-7d8ea7ef8e9e?source=collection_link"
   },
   "item": [
     {
-      "name": "VetCare",
+      "name": "Auth",
       "item": [
         {
-          "name": "LOGUIN OBRIGADORIO",
+          "name": "Login",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "const resposta = pm.response.json();\r",
-                  " \r",
-                  "if (!resposta.token) {\r",
-                  "    throw new Error('A resposta não contém token');\r",
-                  "}\r",
-                  " \r",
-                  "pm.environment.set('token', resposta.token);\r",
-                  " \r",
-                  "console.log('Token salvo:', resposta.token);"
+                  "const resposta = pm.response.json();",
+                  "if (!resposta.token) { throw new Error('A resposta nao contem token'); }",
+                  "pm.environment.set('token', resposta.token);"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -36,20 +30,18 @@
           ],
           "request": {
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"email\": \"lucas@vetcare.com\",\r\n  \"senha\": \"123456\"\r\n}",
+              "raw": "{\n  \"email\": \"lucas@vetcare.com\",\n  \"senha\": \"123456\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -57,12 +49,10 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/auth/login",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/auth/login",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "auth",
                 "login"
@@ -72,27 +62,54 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios",
+          "name": "Status da API",
           "request": {
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/usuarios",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Cadastrar usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Joao da Silva\",\n  \"email\": \"joao@email.com\",\n  \"senha\": \"123456\",\n  \"perfil\": \"tutor\",\n  \"telefone\": \"11999999999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
               "path": [
                 "usuarios"
               ]
@@ -101,62 +118,32 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios adm",
+          "name": "Listar usuarios",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/usuarios?perfil=adiministrador",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/usuarios",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "usuarios"
-              ],
-              "query": [
-                {
-                  "key": "perfil",
-                  "value": "adiministrador"
-                }
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios tutor",
+          "name": "Listar usuarios por perfil",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/usuarios?perfil=tutor",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/usuarios?perfil=tutor",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "usuarios"
               ],
@@ -171,151 +158,102 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios/6a99c1816aa3562eb2239da6 POR ID",
+          "name": "Buscar usuario por ID",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/usuarios/6a99c1816aa3562eb2239da6",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "usuarios",
-                "6a99c1816aa3562eb2239da6"
+                "{{usuarioId}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios-Veterinario",
+          "name": "Atualizar usuario",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Nome atualizado\",\n  \"telefone\": \"11888888888\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
-            "method": "GET",
-            "header": [],
             "url": {
-              "raw": "http://localhost:3000/usuarios?perfil=veterinario",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/usuarios/6a9f78d00a7bc3312293784d",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
-                "usuarios"
-              ],
-              "query": [
-                {
-                  "key": "perfil",
-                  "value": "veterinario"
-                }
+                "usuarios",
+                "6a9f78d00a7bc3312293784d"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios/6a9ce8711e0c237cca41bfbe",
+          "name": "Excluir usuario",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/usuarios/6a9ce8711e0c237cca41bfbe",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/usuarios/6a9f78d00a7bc3312293784d",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "usuarios",
-                "6a9ce8711e0c237cca41bfbe"
+                "6a9f78d00a7bc3312293784d"
               ]
             }
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Pets",
+      "item": [
         {
-          "name": "http://localhost:3000/consultas",
+          "name": "Cadastrar pet",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Rex\",\n  \"especie\": \"Cachorro\",\n  \"raca\": \"Labrador\",\n  \"idade\": 3,\n  \"peso\": 25.5,\n  \"tutor\": \"6a9ac7be69eeba64151a3822\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
-            "method": "GET",
-            "header": [],
             "url": {
-              "raw": "http://localhost:3000/consultas",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/pets",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
-              "path": [
-                "consultas"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "http://localhost:3000/pets",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:3000/pets",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "3000",
               "path": [
                 "pets"
               ]
@@ -324,27 +262,32 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/pets por id",
+          "name": "Listar pets",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/pets/6a9f6cee91c7a82f413e0684",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/pets",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
+              "path": [
+                "pets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar pet por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pets/6a9f6cee91c7a82f413e0684",
+              "host": [
+                "{{baseUrl}}"
+              ],
               "path": [
                 "pets",
                 "6a9f6cee91c7a82f413e0684"
@@ -354,117 +297,84 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/pets/6a9f6ae791c7a82f413e066a",
+          "name": "Atualizar pet",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Rex atualizado\",\n  \"idade\": 4,\n  \"peso\": 27\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
-            "method": "DELETE",
-            "header": [],
             "url": {
-              "raw": "http://localhost:3000/pets/6a9f6ae791c7a82f413e066a",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/pets/6a9f6cee91c7a82f413e0684",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "pets",
-                "6a9f6ae791c7a82f413e066a"
+                "6a9f6cee91c7a82f413e0684"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/vacinas/6a978a94cfef52b60ce2b466 ID OBRIGATORIO",
+          "name": "Excluir pet",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:3000/vacinas/6a978a94cfef52b60ce2b466",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "3000",
-              "path": [
-                "vacinas",
-                "6a978a94cfef52b60ce2b466"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "http://localhost:3000/vacinas/6a9f6258f8c66e09ceefb440 ",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/vacinas/6a9f6258f8c66e09ceefb440",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/pets/6a9f6cee91c7a82f413e0684",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
-                "vacinas",
-                "6a9f6258f8c66e09ceefb440"
+                "pets",
+                "6a9f6cee91c7a82f413e0684"
               ]
             }
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Agendamentos",
+      "item": [
         {
-          "name": "http://localhost:3000/agendamentos",
+          "name": "Criar agendamento",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet\": \"6a9f79480a7bc33122937859\",\n  \"veterinario\": \"6a9cee9c1e0c237cca41bfc2\",\n  \"data\": \"2026-09-10\",\n  \"horario\": \"4:00\",\n  \"observacoes\": \"Consulta de rotina\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
-            "method": "GET",
-            "header": [],
             "url": {
-              "raw": "http://localhost:3000/agendamentos",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/agendamentos",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "agendamentos"
               ]
@@ -473,152 +383,108 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/agendamentos/6a94c32dd97f5216c0779503 id",
+          "name": "Listar agendamentos",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/agendamentos/6a94c32dd97f5216c0779503",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/agendamentos",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
-                "agendamentos",
-                "6a94c32dd97f5216c0779503"
+                "agendamentos"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/agendamentos/deletando agendamento",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const resposta = pm.response.json();\r",
-                  "\r",
-                  "if (!resposta.token) {\r",
-                  "    throw new Error('A resposta não contém token');\r",
-                  "}\r",
-                  "\r",
-                  "pm.environment.set('token', resposta.token);\r",
-                  "\r",
-                  "console.log('Token salvo:', resposta.token);"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
+          "name": "Buscar agendamento por ID",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agendamentos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamentos",
+                ""
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar agendamento",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": \"2026-09-11\",\n  \"horario\": \"15:00\",\n  \"status\": \"confirmado\",\n  \"observacoes\": \"Horario alterado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
+            "url": {
+              "raw": "{{baseUrl}}/agendamentos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamentos",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar agendamento",
+          "request": {
             "method": "DELETE",
             "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"veterinario\": \"6a98ddbd701d6ba2eb4f85bd\",\r\n  \"data\": \"2026-09-10\",\r\n  \"horario\": \"14:30\",\r\n  \"observacoes\": \"Teste de conflito\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "http://localhost:3000/agendamentos/6a9e37d5f3a0d364992f4d40",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/agendamentos/",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "agendamentos",
-                "6a9e37d5f3a0d364992f4d40"
+                ""
               ]
             }
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Consultas",
+      "item": [
         {
-          "name": "http://localhost:3000/usuariois",
+          "name": "Criar consulta",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"nome\": \"Nome atualizado teste PUT-Gabs\",\r\n  \"perfil\": \"tutor\",\r\n  \"telefone\": \"83999999999\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:3000/usuarios/6a98f31889b3686d2909946f",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "3000",
-              "path": [
-                "usuarios",
-                "6a98f31889b3686d2909946f"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "http://localhost:3000/usuario",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"nome\": \"Joao Tutor Criação 43123213\",\r\n  \"email\": \"joaocriacao@vetcare.com\",\r\n  \"senha\": \"123456\",\r\n  \"perfil\": \"tutor\",\r\n  \"telefone\": \"83999999999\"\r\n}",
+              "raw": "{\n  \"pet\": \"6a9f79480a7bc33122937859\",\n  \"veterinario\": \"6a9cee9c1e0c237cca41bfc2\",\n  \"motivoConsulta\": \"Avaliacao geral\",\n  \"procedimentos\": [\n    \"Exame fisico\"\n  ],\n  \"observacoes\": \"Pet saudavel\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -626,50 +492,10 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/usuarios",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/consultas",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
-              "path": [
-                "usuarios"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "http://localhost:3000/consultas",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"veterinario\": \"6a98ddbd701d6ba2eb4f85bd\",\r\n  \"motivoConsulta\": \"Consulta de rotina\",\r\n  \"procedimentos\": [\r\n    \"Avaliação clínica\",\r\n    \"Vacinação\"\r\n  ],\r\n  \"observacoes\": \"Animal em bom estado geral.-criacaoConsulta\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:3000/consultas",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "3000",
               "path": [
                 "consultas"
               ]
@@ -678,99 +504,58 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/pets",
+          "name": "Listar consultas",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
+            "method": "GET",
             "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"nome\": \"Rex\",\r\n  \"especie\": \"Cachorro\",\r\n  \"raca\": \"Labrador\",\r\n  \"idade\": 3,\r\n  \"peso\": 25.5,\r\n  \"tutor\": \"6a9ac7be69eeba64151a3822\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "http://localhost:3000/pets",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/consultas",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
-                "pets"
+                "consultas"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/agendamentos",
+          "name": "Listar consultas por pet",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
+            "method": "GET",
             "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"pet\": \"6a9f6cee91c7a82f413e0684\",\r\n  \"veterinario\": \"6a9cee9c1e0c237cca41bfc2\",\r\n  \"data\": \"2026-09-10\",\r\n  \"horario\": \"14:00\",\r\n  \"observacoes\": \"Consulta de rotina\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "http://localhost:3000/agendamentos",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/consultas/6a9f79480a7bc33122937859",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
-                "agendamentos"
+                "consultas",
+                "6a9f79480a7bc33122937859"
               ]
             }
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Vacinas",
+      "item": [
         {
-          "name": "http://localhost:3000/vacinas",
+          "name": "Cadastrar vacina",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"pet\": \"6a9f726832fe551244e8dc2c\",\r\n  \"tipo\": \"V10\",\r\n  \"dataAplicacao\": \"2026-09-07\",\r\n  \"dataPrevistaReforco\": \"2027-09-07\",\r\n  \"observacoes\": \"Primeira dose aplicada\"\r\n}",
+              "raw": "{\n  \"pet\": \"6a9f79480a7bc33122937859\",\n  \"tipo\": \"V10\",\n  \"dataAplicacao\": \"2026-09-07\",\n  \"dataPrevistaReforco\": \"2027-09-07\",\n  \"observacoes\": \"Primeira dose aplicada\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -778,12 +563,10 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/vacinas",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/vacinas",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "vacinas"
               ]
@@ -792,16 +575,84 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/graphql-Testem sem token",
+          "name": "Listar vacinas por pet",
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
+            "method": "GET",
             "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vacinas/6a9f79480a7bc33122937859",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacinas",
+                "6a9f79480a7bc33122937859"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar lembretes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vacinas/lembretes/proximos?dias=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacinas",
+                "lembretes",
+                "proximos"
+              ],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Excluir vacina",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vacinas/6a9f7a440a7bc3312293787a",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacinas",
+                "6a9f7a440a7bc3312293787a"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "Listar agendamentos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
+              "raw": "{\n  \"query\": \"query { agendamentos { id data horario status observacoes pet { id nome especie raca } veterinario { id nome email } } }\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -809,12 +660,10 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/graphql",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/graphql",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "graphql"
               ]
@@ -823,23 +672,18 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/graphql-Teste com token",
+          "name": "Vacinas por pet",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
+              "raw": "{\n  \"query\": \"query { vacinasPorPet(petId: \\\"{{petId}}\\\") { id tipo dataAplicacao dataPrevistaReforco observacoes pet { id nome especie raca } veterinario { id nome email } } }\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -847,12 +691,10 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/graphql",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/graphql",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "graphql"
               ]
@@ -861,44 +703,18 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/graphql-teste-tutor",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const resposta = pm.response.json();\r",
-                  "\r",
-                  "if (!resposta.token) {\r",
-                  "    throw new Error('A resposta não contém token');\r",
-                  "}\r",
-                  "\r",
-                  "pm.environment.set('token', resposta.token);\r",
-                  "\r",
-                  "console.log('Token salvo:', resposta.token);"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
+          "name": "Lembretes de vacinas",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
+              "raw": "{\n  \"query\": \"query { lembretesVacinas(dias: 30) { id tipo dataAplicacao dataPrevistaReforco observacoes pet { id nome especie raca } veterinario { id nome email } } }\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -906,12 +722,10 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/graphql",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/graphql",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "3000",
               "path": [
                 "graphql"
               ]
@@ -920,6 +734,46 @@
           "response": []
         }
       ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "petId",
+      "value": "ID_DO_PET"
+    },
+    {
+      "key": "tutorId",
+      "value": "ID_DO_TUTOR"
+    },
+    {
+      "key": "veterinarioId",
+      "value": "ID_DO_VETERINARIO"
+    },
+    {
+      "key": "usuarioId",
+      "value": "ID_DO_USUARIO"
+    },
+    {
+      "key": "agendamentoId",
+      "value": "ID_DO_AGENDAMENTO"
+    },
+    {
+      "key": "vacinaId",
+      "value": "ID_DA_VACINA"
     }
   ]
 }
