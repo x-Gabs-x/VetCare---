@@ -1,0 +1,27 @@
+$kind: http-request
+name: http://localhost:3000/pets
+description: ""
+url: http://localhost:3000/pets
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nome\": \"Rexpapai\",\r
+
+    \  \"especie\": \"Cachorro\",\r
+
+    \  \"raca\": \"Labrador\",\r
+
+    \  \"idade\": 3,\r
+
+    \  \"peso\": 25.5,\r
+
+    \  \"tutor\": \"6a9ce8711e0c237cca41bfbe\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 2772033728923879

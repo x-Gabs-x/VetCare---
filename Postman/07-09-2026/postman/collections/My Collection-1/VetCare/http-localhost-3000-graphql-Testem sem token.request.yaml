@@ -1,0 +1,14 @@
+$kind: http-request
+name: http://localhost:3000/graphql-Testem sem token
+url: http://localhost:3000/graphql
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"query\": \"{ agendamentos { id data horario status } }\"\r
+
+    }"
+auth:
+  type: noauth
+order: 10000

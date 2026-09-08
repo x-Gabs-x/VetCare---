@@ -1,0 +1,9 @@
+$kind: http-request
+name: http://localhost:3000/usuarios/6a99c1816aa3562eb2239da6 ID
+url: http://localhost:3000/usuarios/6a99c1816aa3562eb2239da6
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 3000

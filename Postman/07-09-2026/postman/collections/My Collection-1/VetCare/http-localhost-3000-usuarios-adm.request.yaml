@@ -1,0 +1,12 @@
+$kind: http-request
+name: http://localhost:3000/usuarios-adm
+description: ""
+url: http://localhost:3000/usuarios?perfil=administrador
+method: GET
+queryParams:
+  perfil: administrador
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 4951

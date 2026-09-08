@@ -1,0 +1,25 @@
+$kind: http-request
+name: http://localhost:3000/vacinas
+description: ""
+url: http://localhost:3000/vacinas
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"pet\": \"6a9f619ff8c66e09ceefb438\",\r
+
+    \  \"tipo\": \"V10\",\r
+
+    \  \"dataAplicacao\": \"2026-09-07\",\r
+
+    \  \"dataPrevistaReforco\": \"2027-09-07\",\r
+
+    \  \"observacoes\": \"Aplicada durante consulta\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 4503578336040587

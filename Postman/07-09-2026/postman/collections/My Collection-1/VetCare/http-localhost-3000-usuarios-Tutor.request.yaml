@@ -1,0 +1,12 @@
+$kind: http-request
+name: http://localhost:3000/usuarios-Tutor
+description: ""
+url: http://localhost:3000/usuarios?perfil=tutor
+method: GET
+queryParams:
+  perfil: tutor
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 4867

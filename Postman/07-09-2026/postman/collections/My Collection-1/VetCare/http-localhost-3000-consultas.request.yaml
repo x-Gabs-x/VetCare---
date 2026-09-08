@@ -1,0 +1,9 @@
+$kind: http-request
+name: http://localhost:3000/consultas
+url: http://localhost:3000/consultas
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 5000

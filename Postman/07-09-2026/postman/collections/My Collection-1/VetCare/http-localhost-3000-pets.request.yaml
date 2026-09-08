@@ -1,0 +1,10 @@
+$kind: http-request
+name: http://localhost:3000/pets
+description: ""
+url: http://localhost:3000/pets
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 5972

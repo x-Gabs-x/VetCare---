@@ -1,0 +1,19 @@
+$kind: http-request
+name: http://localhost:3000/pets/6a9f6ae791c7a82f413e066a
+description: ""
+url: http://localhost:3000/pets/6a9f6ae791c7a82f413e066a
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"nome\": \"Rex atualizado\",\r
+
+    \  \"peso\": 27\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 4503473546191456

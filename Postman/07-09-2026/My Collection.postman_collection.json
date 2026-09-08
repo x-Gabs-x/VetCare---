@@ -1,55 +1,35 @@
 {
   "info": {
-    "_postman_id": "f2d1213a-15e2-419b-b328-8e1b18b868fc",
-    "name": "My Collection",
+    "_postman_id": "6d432ae6-85ad-4990-9ea3-5e5eac1c6bee",
+    "name": "My Collection Copy",
     "description": "### Welcome to Postman! This is your first collection. \n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests\n• Test your API in real-world scenarios\n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "57572865",
-    "_collection_link": "https://go.postman.co/collection/57572865-f2d1213a-15e2-419b-b328-8e1b18b868fc?source=collection_link"
+    "_exporter_id": "48585050",
+    "_collection_link": "https://go.postman.co/collection/48585050-6d432ae6-85ad-4990-9ea3-5e5eac1c6bee?source=collection_link"
   },
   "item": [
     {
       "name": "VetCare",
       "item": [
         {
-          "name": "VetCare-Requisições",
+          "name": "http://localhost:3000/auth/login (RODE ANTES DE TUDO)",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "const resposta = pm.response.json();\r",
-                  " \r",
-                  "if (!resposta.token) {\r",
-                  "    throw new Error('A resposta não contém token');\r",
-                  "}\r",
-                  " \r",
-                  "pm.environment.set('token', resposta.token);\r",
-                  " \r",
-                  "console.log('Token salvo:', resposta.token);"
-                ],
                 "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "exec": [
+                  "const resposta = pm.response.json();\r\n\r\nif (!resposta.token) {\r\n  throw new Error('A resposta não contém token');\r\n}\r\n\r\npm.environment.set('token', resposta.token);\r\nconsole.log('Token salvo:', resposta.token);"
+                ]
               }
             }
           ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"email\": \"lucas@vetcare.com\",\r\n  \"senha\": \"123456\"\r\n}",
+              "raw": "{\r\n  \"email\": \"tutorteste123@vetcare.com\",\r\n  \"senha\": \"123456\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -72,18 +52,8 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios-Tutores",
+          "name": "http://localhost:3000/usuarios",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
             "header": [],
             "url": {
@@ -101,7 +71,7 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios/6a99c1816aa3562eb2239da6-Tutor",
+          "name": "http://localhost:3000/usuarios/6a99c1816aa3562eb2239da6",
           "request": {
             "auth": {
               "type": "bearer",
@@ -131,7 +101,7 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/usuarios-Veterinario",
+          "name": "http://localhost:3000/usuarios(tutor)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -146,7 +116,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3000/usuarios?perfil=veterinario",
+              "raw": "http://localhost:3000/usuarios?perfil=tutor",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -158,7 +128,7 @@
               "query": [
                 {
                   "key": "perfil",
-                  "value": "veterinario"
+                  "value": "tutor"
                 }
               ]
             }
@@ -166,52 +136,41 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/consultas-pet",
+          "name": "http://localhost:3000/usuarios",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
+            "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Joao Tutor teste 43123213\",\r\n  \"email\": \"joaotestefdsfds@vetcare.com\",\r\n  \"senha\": \"123456\",\r\n  \"perfil\": \"tutor\",\r\n  \"telefone\": \"83999999999\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": "http://localhost:3000/consultas",
+              "raw": "http://localhost:3000/usuarios",
               "protocol": "http",
               "host": [
                 "localhost"
               ],
               "port": "3000",
               "path": [
-                "consultas"
+                "usuarios"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/consultas-pet-update",
+          "name": "http://localhost:3000/usuarios",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "PUT",
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"nome\": \"Nome atualizado teste PUT-Gabs\",\r\n  \"perfil\": \"tutor\",\r\n  \"telefone\": \"83999999999\"\r\n}",
+              "raw": "{\r\n  \"nome\": \"Nome atualizado teste PUT\",\r\n  \"perfil\": \"tutor\",\r\n  \"telefone\": \"83999999999\"\r\n \r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -234,7 +193,36 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/consultas-criacao-usuario",
+          "name": "http://localhost:3000/pets",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/pets",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "pets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "http://localhost:3000/pets",
           "request": {
             "auth": {
               "type": "bearer",
@@ -250,7 +238,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"nome\": \"Joao Tutor Criação 43123213\",\r\n  \"email\": \"joaocriacao@vetcare.com\",\r\n  \"senha\": \"123456\",\r\n  \"perfil\": \"tutor\",\r\n  \"telefone\": \"83999999999\"\r\n}",
+              "raw": "{\r\n  \"nome\": \"Rex\",\r\n  \"especie\": \"Cachorro\",\r\n  \"raca\": \"Labrador\",\r\n  \"idade\": 3,\r\n  \"peso\": 25.5,\r\n  \"tutor\": \"6a9a1f8c60310be1dbc8f463\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -258,21 +246,50 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/usuarios",
+              "raw": "http://localhost:3000/pets",
               "protocol": "http",
               "host": [
                 "localhost"
               ],
               "port": "3000",
               "path": [
-                "usuarios"
+                "pets"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/consultas-criacao-constulta",
+          "name": "http://localhost:3000/consultas",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/consultas",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "consultas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "http://localhost:3000/consultas",
           "request": {
             "auth": {
               "type": "bearer",
@@ -288,7 +305,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"veterinario\": \"6a98ddbd701d6ba2eb4f85bd\",\r\n  \"motivoConsulta\": \"Consulta de rotina\",\r\n  \"procedimentos\": [\r\n    \"Avaliação clínica\",\r\n    \"Vacinação\"\r\n  ],\r\n  \"observacoes\": \"Animal em bom estado geral.-criacaoConsulta\"\r\n}",
+              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"veterinario\": \"6a98ddbd701d6ba2eb4f85bd\",\r\n  \"motivoConsulta\": \"Consulta de rotina\",\r\n  \"procedimentos\": [\r\n    \"Avaliação clínica\",\r\n    \"Vacinação\"\r\n  ],\r\n  \"observacoes\": \"Animal em bom estado geral.\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -310,28 +327,7 @@
           "response": []
         },
         {
-          "name": "http://localhost:3000/agendamentos/deletando agendamento",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const resposta = pm.response.json();\r",
-                  "\r",
-                  "if (!resposta.token) {\r",
-                  "    throw new Error('A resposta não contém token');\r",
-                  "}\r",
-                  "\r",
-                  "pm.environment.set('token', resposta.token);\r",
-                  "\r",
-                  "console.log('Token salvo:', resposta.token);"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
+          "name": "http://localhost:3000/vacinas/6a978a94cfef52b60ce2b466",
           "request": {
             "auth": {
               "type": "bearer",
@@ -343,11 +339,11 @@
                 }
               ]
             },
-            "method": "DELETE",
+            "method": "GET",
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"veterinario\": \"6a98ddbd701d6ba2eb4f85bd\",\r\n  \"data\": \"2026-09-10\",\r\n  \"horario\": \"14:30\",\r\n  \"observacoes\": \"Teste de conflito\"\r\n}",
+              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"tipo\": \"V10 - teste post\",\r\n  \"dataAplicacao\": \"2026-09-07\",\r\n  \"dataPrevistaReforco\": \"2027-09-07\",\r\n  \"observacoes\": \"Aplicada durante consulta\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -355,53 +351,22 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/agendamentos/6a9e37d5f3a0d364992f4d40",
+              "raw": "http://localhost:3000/vacinas/6a978a94cfef52b60ce2b466",
               "protocol": "http",
               "host": [
                 "localhost"
               ],
               "port": "3000",
               "path": [
-                "agendamentos",
-                "6a9e37d5f3a0d364992f4d40"
+                "vacinas",
+                "6a978a94cfef52b60ce2b466"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "http://localhost:3000/graphql-Testem sem token",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:3000/graphql",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "3000",
-              "path": [
-                "graphql"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "http://localhost:3000/graphql-Teste com token",
+          "name": "http://localhost:3000/vacinas/6a978a94cfef52b60ce2b466",
           "request": {
             "auth": {
               "type": "bearer",
@@ -417,7 +382,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
+              "raw": "{\r\n  \"pet\": \"6a978a94cfef52b60ce2b466\",\r\n  \"tipo\": \"V10 - teste post\",\r\n  \"dataAplicacao\": \"2026-09-07\",\r\n  \"dataPrevistaReforco\": \"2027-09-07\",\r\n  \"observacoes\": \"Aplicada durante consulta\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -425,139 +390,30 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/graphql",
+              "raw": "http://localhost:3000/vacinas",
               "protocol": "http",
               "host": [
                 "localhost"
               ],
               "port": "3000",
               "path": [
-                "graphql"
+                "vacinas"
               ]
             }
           },
           "response": []
-        },
-        {
-          "name": "http://localhost:3000/graphql-teste-tutor",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const resposta = pm.response.json();\r",
-                  "\r",
-                  "if (!resposta.token) {\r",
-                  "    throw new Error('A resposta não contém token');\r",
-                  "}\r",
-                  "\r",
-                  "pm.environment.set('token', resposta.token);\r",
-                  "\r",
-                  "console.log('Token salvo:', resposta.token);"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"query\": \"{ agendamentos { id data horario status } }\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:3000/graphql",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "3000",
-              "path": [
-                "graphql"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "New Request",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const resposta = pm.response.json();\r",
-              " \r",
-              "if (!resposta.token) {\r",
-              "    throw new Error('A resposta não contém token');\r",
-              "}\r",
-              " \r",
-              "pm.environment.set('token', resposta.token);\r",
-              " \r",
-              "console.log('Token salvo:', resposta.token);"
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
         }
       ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n  \"email\": \"lucas@vetcare.com\",\r\n  \"senha\": \"123456\"\r\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
           }
-        },
-        "url": {
-          "raw": "http://localhost:3000/auth/login",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "3000",
-          "path": [
-            "auth",
-            "login"
-          ]
-        }
-      },
-      "response": []
+        ]
+      }
     }
   ]
 }

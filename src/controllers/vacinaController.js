@@ -93,8 +93,21 @@ const listarLembretes = asyncHandler(async (req, res) => {
   return res.status(200).json(lembretes);
 });
 
+const removerVacina = asyncHandler(async (req, res) => {
+  const vacina = await Vacina.findById(req.params.id);
+
+  if (!vacina) {
+    return res.status(404).json({ erro: 'Vacina nao encontrada.' });
+  }
+
+  await vacina.deleteOne();
+
+  return res.status(200).json({ mensagem: 'Vacina removida com sucesso.' });
+});
+
 module.exports = {
   registrarVacina,
   listarVacinasPorPet,
   listarLembretes,
+  removerVacina,
 };
