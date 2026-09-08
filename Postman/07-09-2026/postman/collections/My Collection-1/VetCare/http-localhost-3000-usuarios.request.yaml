@@ -1,9 +1,0 @@
-$kind: http-request
-name: http://localhost:3000/usuarios
-url: http://localhost:3000/usuarios
-method: GET
-auth:
-  type: bearer
-  credentials:
-    token: "{{token}}"
-order: 2000
