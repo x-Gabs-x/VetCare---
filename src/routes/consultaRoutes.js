@@ -3,6 +3,7 @@ const express = require('express');
 const {
     criarConsulta,
     listarTodasConsultas,
+    atualizarConsulta,
     listarConsultasPorPet,
 } = require('../controllers/consultaController');
 const { verificarToken, autorizar } = require('../middlewares/auth');
@@ -19,6 +20,11 @@ router.post(
 router.get(
     '/',
     listarTodasConsultas
+);
+
+router.put(
+    '/:id',
+    atualizarConsulta
 );
 
 router.get(

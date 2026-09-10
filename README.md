@@ -15,6 +15,42 @@ Primeiro. crie um arquivo `.env` na raiz do projeto e implemente o enviado na at
 
 Todas as rotas abaixo usam JSON. Com exceção de `POST /usuarios`, as rotas protegidas exigem `Authorization: Bearer <token>`.
 
+## GraphQL
+
+O endpoint GraphQL fica disponível em `http://localhost:3000/graphql`. Abra esse endereço no navegador para usar o terminal GraphiQL, informe o token em **Headers** e execute as operações diretamente no editor GraphQL. Não é necessário montar manualmente um JSON com a propriedade `query` no Postman.
+
+Exemplo de cabeçalho no GraphiQL:
+
+```json
+{
+  "Authorization": "Bearer SEU_TOKEN"
+}
+```
+
+O schema contempla usuários, pets, agendamentos, consultas e vacinas, incluindo seus relacionamentos:
+
+```graphql
+query DadosVetCare {
+  me { id nome email perfil }
+  pets { id nome especie raca idade peso tutor { id nome email } }
+  agendamentos {
+    id data horario status observacoes
+    pet { id nome especie raca tutor { id nome } }
+    veterinario { id nome email }
+  }
+  consultas {
+    id motivoConsulta procedimentos observacoes
+    pet { id nome }
+    veterinario { id nome email }
+  }
+  vacinas {
+    id tipo dataAplicacao dataPrevistaReforco observacoes
+    pet { id nome }
+    veterinario { id nome email }
+  }
+}
+```
+
 | Módulo | Rotas | Acesso |
 | --- | --- | --- |
 | Autenticação | `POST /auth/login` | Público |
@@ -23,7 +59,7 @@ Todas as rotas abaixo usam JSON. Com exceção de `POST /usuarios`, as rotas pro
 | Usuários | `PUT /usuarios/:id` | Próprio usuário ou administrador |
 | Usuários | `DELETE /usuarios/:id` | Administrador |
 | Pets | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/pets` | Administrador ou veterinário |
-| Consultas | `POST /consultas`, `GET /consultas`, `GET /consultas/:petId` | Administrador ou veterinário |
+| Consultas | `POST /consultas`, `GET /consultas`, `GET /consultas/:petId`, `PUT /consultas/:id` | Administrador ou veterinário |
 | Agendamentos | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/agendamentos` | Administrador ou veterinário |
 | Vacinas | `POST /vacinas`, `GET /vacinas/:petId`, `GET /vacinas/lembretes/proximos` | Autenticado; gravação e lembretes exigem administrador, veterinário ou recepcionista |
 
