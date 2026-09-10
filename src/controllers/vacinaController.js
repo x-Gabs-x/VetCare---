@@ -79,9 +79,10 @@ const listarLembretes = asyncHandler(async (req, res) => {
   }
 
   const dias = Number(req.query.dias) || 30;
-  const hoje = new Date();
-  const dataLimite = new Date();
-  dataLimite.setDate(hoje.getDate() + dias);
+  const agora = new Date();
+  const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
+  const dataLimite = new Date(hoje);
+  dataLimite.setUTCDate(hoje.getUTCDate() + dias);
 
   const lembretes = await Vacina.find({
     dataPrevistaReforco: { $gte: hoje, $lte: dataLimite },
