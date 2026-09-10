@@ -40,4 +40,22 @@ function autorizar(...perfisPermitidos) {
   };
 }
 
-module.exports = { verificarToken, autorizar };
+function identificarUsuarioOpcional(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) return next(); // sem token: segue como visitante anonimo
+
+  const [tipo, token] = authHeader.split(' ');
+
+  if (tipo !== 'Bearer' || !token) return next();
+
+  try {
+    req.usuario = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (erro) {
+  }
+  next();
+}
+
+
+
+module.exports = { verificarToken, autorizar, identificarUsuarioOpcional };

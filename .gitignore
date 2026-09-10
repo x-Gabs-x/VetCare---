@@ -1,3 +1,6 @@
 node_modules/
 .env
 npm-debug.log
+
+# Registro local para repasse ao time; não deve ser versionado.
+LISTA_DE_AJUSTES.md

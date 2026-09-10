@@ -1,0 +1,1034 @@
+{
+  "info": {
+    "_postman_id": "0673bde4-1dac-497f-85ef-65ad17205f15",
+    "name": "VetCare API",
+    "description": "Colecao organizada da API VetCare. Execute Login primeiro e selecione o ambiente Vet Care Local.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57572865",
+    "_collection_link": "https://go.postman.co/collection/57572865-0673bde4-1dac-497f-85ef-65ad17205f15?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const resposta = pm.response.json();",
+                  "if (!resposta.token) { throw new Error('A resposta nao contem token'); }",
+                  "pm.environment.set('token', resposta.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lucas@vetcare.com\",\n  \"senha\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Status da API",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Cadastrar usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Joao da Silva\",\n  \"email\": \"joao@email.com\",\n  \"senha\": \"123456\",\n  \"perfil\": \"tutor\",\n  \"telefone\": \"11999999999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar usuarios por perfil",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?perfil=tutor",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "perfil",
+                  "value": "tutor"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar usuario por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Nome atualizado\",\n  \"telefone\": \"11888888888\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/6a9f78d00a7bc3312293784d",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "6a9f78d00a7bc3312293784d"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Excluir usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/6a9f78d00a7bc3312293784d",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "6a9f78d00a7bc3312293784d"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pets",
+      "item": [
+        {
+          "name": "Cadastrar pet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Rex\",\n  \"especie\": \"Cachorro\",\n  \"raca\": \"Labrador\",\n  \"idade\": 3,\n  \"peso\": 25.5,\n  \"tutor\": \"6a9ac7be69eeba64151a3822\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar pets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar pet por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pets/6a9f6cee91c7a82f413e0684",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pets",
+                "6a9f6cee91c7a82f413e0684"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar pet",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Rex atualizado\",\n  \"idade\": 4,\n  \"peso\": 27\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pets/6a9f6cee91c7a82f413e0684",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pets",
+                "6a9f6cee91c7a82f413e0684"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Excluir pet",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pets/6a9f6cee91c7a82f413e0684",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pets",
+                "6a9f6cee91c7a82f413e0684"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Agendamentos",
+      "item": [
+        {
+          "name": "Criar agendamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet\": \"6a9f79480a7bc33122937859\",\n  \"veterinario\": \"6a9cee9c1e0c237cca41bfc2\",\n  \"data\": \"2026-09-10\",\n  \"horario\": \"4:00\",\n  \"observacoes\": \"Consulta de rotina\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agendamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamentos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar agendamentos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agendamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamentos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar agendamento por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agendamentos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamentos",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar agendamento",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": \"2026-09-11\",\n  \"horario\": \"15:00\",\n  \"status\": \"confirmado\",\n  \"observacoes\": \"Horario alterado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agendamentos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamentos",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar agendamento",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agendamentos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamentos",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Consultas",
+      "item": [
+        {
+          "name": "Criar consulta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet\": \"6a9f79480a7bc33122937859\",\n  \"veterinario\": \"6a9cee9c1e0c237cca41bfc2\",\n  \"motivoConsulta\": \"Avaliacao geral\",\n  \"procedimentos\": [\n    \"Exame fisico\"\n  ],\n  \"observacoes\": \"Pet saudavel\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/consultas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consultas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar consultas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/consultas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consultas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar consultas por pet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/consultas/6a9f79480a7bc33122937859",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consultas",
+                "6a9f79480a7bc33122937859"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vacinas",
+      "item": [
+        {
+          "name": "Cadastrar vacina",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet\": \"6a9f79480a7bc33122937859\",\n  \"tipo\": \"V10\",\n  \"dataAplicacao\": \"2026-09-07\",\n  \"dataPrevistaReforco\": \"2027-09-07\",\n  \"observacoes\": \"Primeira dose aplicada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vacinas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacinas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar vacinas por pet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vacinas/6a9f79480a7bc33122937859",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacinas",
+                "6a9f79480a7bc33122937859"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar lembretes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vacinas/lembretes/proximos?dias=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacinas",
+                "lembretes",
+                "proximos"
+              ],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Excluir vacina",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vacinas/6a9f7a440a7bc3312293787a",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacinas",
+                "6a9f7a440a7bc3312293787a"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "Meus dados",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  me {\r\n    id\r\n    nome\r\n    email\r\n    perfil\r\n    telefone\r\n    ativo\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  usuarios {\r\n    id\r\n    nome\r\n    email\r\n    perfil\r\n    telefone\r\n    ativo\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar usuario por ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query BuscarUsuario($usuarioId: ID!) {\r\n  usuario(id: $usuarioId) {\r\n    id\r\n    nome\r\n    email\r\n    perfil\r\n    telefone\r\n    ativo\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"usuarioId\": \"6aa1d6ac25439f48c7769e42\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar pets",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  pets {\r\n    id\r\n    nome\r\n    especie\r\n    raca\r\n    idade\r\n    peso\r\n    tutor {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n      telefone\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar pet por ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query BuscarPet($petId: ID!) {\r\n  pet(id: $petId) {\r\n    id\r\n    nome\r\n    especie\r\n    raca\r\n    idade\r\n    peso\r\n    tutor {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"petId\": \"6aa22e3824766efdb3b13839\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar agendamentos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  agendamentos {\r\n    id\r\n    data\r\n    horario\r\n    status\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar agendamento por ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query BuscarAgendamento($agendamentoId: ID!) {\r\n  agendamento(id: $agendamentoId) {\r\n    id\r\n    data\r\n    horario\r\n    status\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"agendamentoId\": \"6a9e391543680af2ce1099a3\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar consultas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  consultas {\r\n    id\r\n    motivoConsulta\r\n    procedimentos\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar consultas por pet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query ConsultasPorPet($petId: ID!) {\r\n  consultasPorPet(petId: $petId) {\r\n    id\r\n    motivoConsulta\r\n    procedimentos\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"petId\": \"6a9f79480a7bc33122937859\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar todas as vacinas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  vacinas {\r\n    id\r\n    tipo\r\n    dataAplicacao\r\n    dataPrevistaReforco\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vacinas por pet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query VacinasPorPet($petId: ID!) {\r\n  vacinasPorPet(petId: $petId) {\r\n    id\r\n    tipo\r\n    dataAplicacao\r\n    dataPrevistaReforco\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"petId\": \"6aa22e3824766efdb3b13839\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lembretes de vacinas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  lembretesVacinas(dias: 30) {\r\n    id\r\n    tipo\r\n    dataAplicacao\r\n    dataPrevistaReforco\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "petId",
+      "value": "ID_DO_PET"
+    },
+    {
+      "key": "tutorId",
+      "value": "ID_DO_TUTOR"
+    },
+    {
+      "key": "veterinarioId",
+      "value": "ID_DO_VETERINARIO"
+    },
+    {
+      "key": "usuarioId",
+      "value": "ID_DO_USUARIO"
+    },
+    {
+      "key": "agendamentoId",
+      "value": "ID_DO_AGENDAMENTO"
+    },
+    {
+      "key": "vacinaId",
+      "value": "ID_DA_VACINA"
+    }
+  ]
+}

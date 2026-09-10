@@ -4,19 +4,21 @@ const asyncHandler = require('../utils/asyncHandler');
 const cadastrarUsuario = asyncHandler(async (req, res) => {
   const { nome, email, senha, perfil, telefone } = req.body;
 
-  if (!nome || !email || !senha || !perfil) {
+  if (!nome || !email || !senha) {
     return res.status(400).json({
-      erro: 'Os campos nome, email, senha e perfil sao obrigatorios.',
+      erro: 'Os campos nome, email e senha sao obrigatorios.',
     });
   }
 
   const usuarioExistente = await Usuario.findOne({ email });
-
   if (usuarioExistente) {
     return res.status(409).json({ erro: 'Ja existe um usuario cadastrado com este e-mail.' });
   }
 
-  const usuario = await Usuario.create({ nome, email, senha, perfil, telefone });
+  const solicitanteEhAdmin = req.usuario?.perfil === 'administrador';
+  const perfilFinal = solicitanteEhAdmin && perfil ? perfil : 'tutor';
+
+  const usuario = await Usuario.create({ nome, email, senha, perfil: perfilFinal, telefone });
 
   return res.status(201).json({
     id: usuario._id,
@@ -30,8 +32,17 @@ const cadastrarUsuario = asyncHandler(async (req, res) => {
 });
 
 const listarUsuarios = asyncHandler(async (req, res) => {
-  const { perfil } = req.query;
-  const filtro = perfil ? { perfil } : {};
+  const { perfil, nome } = req.query;
+  const filtro = {};
+
+  if (perfil) {
+    filtro.perfil = perfil;
+  }
+
+  if (nome) {
+    const nomeEscapado = nome.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    filtro.nome = { $regex: nomeEscapado, $options: 'i' };
+  }
 
   const usuarios = await Usuario.find(filtro).sort({ createdAt: -1 });
 
@@ -57,10 +68,25 @@ const atualizarUsuario = asyncHandler(async (req, res) => {
     return res.status(404).json({ erro: 'Usuario nao encontrado.' });
   }
 
+  const ehAdmin = req.usuario.perfil === 'administrador';
+  const ehDono = req.usuario.id === String(usuario._id);
+
+  if (!ehAdmin && !ehDono) {
+    return res.status(403).json({
+      erro: 'Acesso negado. Voce so pode atualizar o seu proprio cadastro.',
+    });
+  }
+
+  if (!ehAdmin && (perfil || typeof ativo === 'boolean')) {
+    return res.status(403).json({
+      erro: 'Apenas administrador pode alterar perfil ou status ativo.',
+    });
+  }
+
   if (nome) usuario.nome = nome;
   if (telefone) usuario.telefone = telefone;
-  if (perfil) usuario.perfil = perfil;
-  if (typeof ativo === 'boolean') usuario.ativo = ativo;
+  if (ehAdmin && perfil) usuario.perfil = perfil;
+  if (ehAdmin && typeof ativo === 'boolean') usuario.ativo = ativo;
   if (senha) usuario.senha = senha;
 
   await usuario.save();
