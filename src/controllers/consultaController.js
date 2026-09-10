@@ -101,6 +101,40 @@ const listarTodasConsultas = asyncHandler(async (req, res) => {
   return res.status(200).json(consultas);
 });
 
+const atualizarConsulta = asyncHandler(async (req, res) => {
+  const { motivoConsulta, procedimentos, observacoes } = req.body;
+
+  if (motivoConsulta !== undefined && (!motivoConsulta || !motivoConsulta.trim())) {
+    return res.status(400).json({
+      erro: 'O motivo da consulta nao pode ficar vazio.',
+    });
+  }
+
+  if (procedimentos !== undefined && !Array.isArray(procedimentos)) {
+    return res.status(400).json({
+      erro: 'Procedimentos deve ser uma lista.',
+    });
+  }
+
+  const consulta = await Consulta.findById(req.params.id);
+
+  if (!consulta) {
+    return res.status(404).json({ erro: 'Consulta nao encontrada.' });
+  }
+
+  if (motivoConsulta !== undefined) consulta.motivoConsulta = motivoConsulta.trim();
+  if (procedimentos !== undefined) consulta.procedimentos = procedimentos;
+  if (observacoes !== undefined) consulta.observacoes = observacoes;
+
+  await consulta.save();
+  await consulta.populate([
+    { path: 'pet', select: 'nome especie raca idade peso tutor' },
+    { path: 'veterinario', select: 'nome email perfil' },
+  ]);
+
+  return res.status(200).json(consulta);
+});
+
 const listarConsultasPorPet = asyncHandler(async (req, res) => {
   const { petId } = req.params;
 
@@ -130,5 +164,6 @@ const listarConsultasPorPet = asyncHandler(async (req, res) => {
 module.exports = {
   criarConsulta,
   listarTodasConsultas,
+  atualizarConsulta,
   listarConsultasPorPet,
 };

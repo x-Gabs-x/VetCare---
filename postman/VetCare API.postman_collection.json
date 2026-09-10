@@ -1,11 +1,11 @@
 {
   "info": {
-    "_postman_id": "ea4ef9f9-d505-421a-9dc5-7d8ea7ef8e9e",
+    "_postman_id": "0673bde4-1dac-497f-85ef-65ad17205f15",
     "name": "VetCare API",
     "description": "Colecao organizada da API VetCare. Execute Login primeiro e selecione o ambiente Vet Care Local.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "48585050",
-    "_collection_link": "https://go.postman.co/collection/48585050-ea4ef9f9-d505-421a-9dc5-7d8ea7ef8e9e?source=collection_link"
+    "_exporter_id": "57572865",
+    "_collection_link": "https://go.postman.co/collection/57572865-0673bde4-1dac-497f-85ef-65ad17205f15?source=collection_link"
   },
   "item": [
     {
@@ -641,6 +641,151 @@
       "name": "GraphQL",
       "item": [
         {
+          "name": "Meus dados",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  me {\r\n    id\r\n    nome\r\n    email\r\n    perfil\r\n    telefone\r\n    ativo\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  usuarios {\r\n    id\r\n    nome\r\n    email\r\n    perfil\r\n    telefone\r\n    ativo\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar usuario por ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query BuscarUsuario($usuarioId: ID!) {\r\n  usuario(id: $usuarioId) {\r\n    id\r\n    nome\r\n    email\r\n    perfil\r\n    telefone\r\n    ativo\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"usuarioId\": \"6aa1d6ac25439f48c7769e42\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar pets",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  pets {\r\n    id\r\n    nome\r\n    especie\r\n    raca\r\n    idade\r\n    peso\r\n    tutor {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n      telefone\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar pet por ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query BuscarPet($petId: ID!) {\r\n  pet(id: $petId) {\r\n    id\r\n    nome\r\n    especie\r\n    raca\r\n    idade\r\n    peso\r\n    tutor {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"petId\": \"6aa22e3824766efdb3b13839\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Listar agendamentos",
           "request": {
             "method": "POST",
@@ -651,12 +796,126 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"query { agendamentos { id data horario status observacoes pet { id nome especie raca } veterinario { id nome email } } }\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  agendamentos {\r\n    id\r\n    data\r\n    horario\r\n    status\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar agendamento por ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query BuscarAgendamento($agendamentoId: ID!) {\r\n  agendamento(id: $agendamentoId) {\r\n    id\r\n    data\r\n    horario\r\n    status\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"agendamentoId\": \"6a9e391543680af2ce1099a3\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar consultas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  consultas {\r\n    id\r\n    motivoConsulta\r\n    procedimentos\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar consultas por pet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query ConsultasPorPet($petId: ID!) {\r\n  consultasPorPet(petId: $petId) {\r\n    id\r\n    motivoConsulta\r\n    procedimentos\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"petId\": \"6a9f79480a7bc33122937859\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar todas as vacinas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  vacinas {\r\n    id\r\n    tipo\r\n    dataAplicacao\r\n    dataPrevistaReforco\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n      tutor {\r\n        id\r\n        nome\r\n      }\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
               }
             },
             "url": {
@@ -682,12 +941,10 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"query { vacinasPorPet(petId: \\\"{{petId}}\\\") { id tipo dataAplicacao dataPrevistaReforco observacoes pet { id nome especie raca } veterinario { id nome email } } }\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+              "mode": "graphql",
+              "graphql": {
+                "query": "query VacinasPorPet($petId: ID!) {\r\n  vacinasPorPet(petId: $petId) {\r\n    id\r\n    tipo\r\n    dataAplicacao\r\n    dataPrevistaReforco\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": "{\r\n  \"petId\": \"6aa22e3824766efdb3b13839\"\r\n}"
               }
             },
             "url": {
@@ -713,12 +970,10 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"query { lembretesVacinas(dias: 30) { id tipo dataAplicacao dataPrevistaReforco observacoes pet { id nome especie raca } veterinario { id nome email } } }\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\r\n  lembretesVacinas(dias: 30) {\r\n    id\r\n    tipo\r\n    dataAplicacao\r\n    dataPrevistaReforco\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
+                "variables": ""
               }
             },
             "url": {
