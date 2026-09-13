@@ -6,11 +6,11 @@ const {
   atualizarPet,
   removerPet,
 } = require('../controllers/petController');
-const { verificarToken, autorizar } = require('../middlewares/auth');
+const { verificarToken } = require('../middlewares/auth');
 
 const router = express.Router();
 
-router.use(verificarToken, autorizar('administrador', 'veterinario'));
+router.use(verificarToken);
 
 router.post('/', cadastrarPet);
 router.get('/', listarPets);
