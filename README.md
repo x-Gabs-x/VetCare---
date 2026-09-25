@@ -5,11 +5,25 @@
 Requisitos: Node.js, npm e uma instância MongoDB disponível.
 
 ```bash
+cd backend
 npm install
 npm start
 ```
 
-Primeiro. crie um arquivo `.env` na raiz do projeto e implemente o enviado na atividade;
+O arquivo `.env` deve ficar dentro da pasta `backend`. Ele não deve ser enviado ao Git.
+
+## Execução do frontend
+
+Quando as telas forem criadas na pasta `frontend`, elas poderão ser abertas diretamente no navegador. Para uma melhor experiência durante o desenvolvimento, instale a extensão **Live Server** no VS Code, abra a pasta do projeto e clique com o botão direito no arquivo HTML desejado.
+
+Selecione **Open with Live Server**. A tela será aberta em um endereço semelhante a `http://127.0.0.1:5500/frontend/login.html`.
+
+O backend deve continuar sendo executado separadamente em outro terminal:
+
+```powershell
+cd backend
+npm start
+```
 
 ## Rotas disponíveis
 
