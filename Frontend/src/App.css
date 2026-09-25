@@ -1,0 +1,299 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #edf2f3;
+}
+
+.sidebar {
+  width: 280px;
+  background: #0f4a5c;
+  color: #edf8f8;
+  padding: 18px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.brand-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 18px;
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: #1ec7c8;
+  color: #0b2f38;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.brand-box small {
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  display: block;
+}
+
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 12px 14px;
+  border-radius: 10px;
+  transition: 0.2s ease;
+}
+
+.nav-item span {
+  width: 18px;
+  display: inline-block;
+  text-align: center;
+}
+
+.nav-item.active,
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 18px;
+}
+
+.profile-mini {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2dd4bf, #0ea5e9);
+  color: #0b2f38;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.profile-mini strong,
+.profile-mini small {
+  display: block;
+}
+
+.profile-mini small {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.logout-btn {
+  display: block;
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+}
+
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 16px 24px;
+}
+
+.search-box {
+  flex: 1;
+  max-width: 640px;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #f3f6f7;
+  border: 1px solid #dde7ea;
+  color: #64748b;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-badge,
+.icon-btn {
+  border: 1px solid #dfe7ea;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #0f172a;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #f9a8d4, #f97316);
+  color: white;
+  font-weight: 700;
+}
+
+.content-area {
+  flex: 1;
+  padding: 30px 28px 40px;
+  background: #f3f6f7;
+}
+
+.page-shell {
+  background: #fff;
+  border: 1px solid #e4ebee;
+  border-radius: 18px;
+  padding: 30px 28px;
+  min-height: 320px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 2.8vw, 3rem);
+  color: #10252d;
+}
+
+.page-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eaf6f2;
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.page-description {
+  max-width: 620px;
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.auth-shell {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f7f8;
+}
+
+.auth-card {
+  width: min(520px, 100%);
+  background: white;
+  border: 1px solid #e0eaee;
+  border-radius: 18px;
+  padding: 32px 28px;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #1ec7c8;
+  color: #0b2f38;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.brand-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.brand-block small {
+  display: block;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.56rem;
+}
+
+.auth-card h1 {
+  margin: 0 0 10px;
+  font-size: 2.2rem;
+  color: #10252d;
+}
+
+.auth-card p {
+  color: #475569;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .content-area {
+    padding: 18px 16px 28px;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+  }
+}
