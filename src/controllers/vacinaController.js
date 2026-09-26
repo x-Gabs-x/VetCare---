@@ -20,11 +20,23 @@ async function buscarPetOuFalhar(petId) {
   return pet;
 }
 
+function idDeReferencia(valor) {
+  if (!valor) return '';
+  if (typeof valor === 'string') return valor;
+  if (typeof valor === 'object') {
+    if (valor._id) return valor._id.toString();
+    if (valor.id) return valor.id.toString();
+    return valor.toString();
+  }
+  return String(valor);
+}
+
 function usuarioPodeAcessarPet(usuario, pet) {
   if (!usuario) return false;
   if (temVisaoGeral(usuario)) return true;
   if (usuario.perfil === 'tutor') {
-    return String(pet.tutor) === String(usuario.id);
+    const tutorId = idDeReferencia(pet?.tutor);
+    return Boolean(tutorId) && String(tutorId) === String(usuario.id);
   }
   return false;
 }
