@@ -6,21 +6,16 @@ const {
   atualizarPet,
   removerPet,
 } = require('../controllers/petController');
-<<<<<<< HEAD
-const router = express.Router();
-
-=======
 const { verificarToken, autorizar } = require('../middlewares/auth');
 
 const router = express.Router();
 
-router.use(verificarToken, autorizar('administrador', 'veterinario'));
+router.use(verificarToken);
 
->>>>>>> 8918f6ea3977896247738614cbeabf47df2070e8
-router.post('/', cadastrarPet);
-router.get('/', listarPets);
-router.get('/:id', buscarPetPorId);
-router.put('/:id', atualizarPet);
-router.delete('/:id', removerPet);
+router.post('/', autorizar('administrador', 'veterinario', 'recepcionista'), cadastrarPet);
+router.get('/', autorizar('administrador', 'veterinario', 'recepcionista', 'tutor'), listarPets);
+router.get('/:id', autorizar('administrador', 'veterinario', 'recepcionista', 'tutor'), buscarPetPorId);
+router.put('/:id', autorizar('administrador', 'veterinario'), atualizarPet);
+router.delete('/:id', autorizar('administrador'), removerPet);
 
 module.exports = router;
