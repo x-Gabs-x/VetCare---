@@ -19,14 +19,8 @@ async function validarTutor(tutorId) {
     throw erro;
   }
 
-  if (tutor.perfil !== 'tutor') {
-    const erro = new Error('O usuario informado como tutor precisa possuir o perfil tutor.');
-    erro.status = 400;
-    throw erro;
-  }
-
   if (!tutor.ativo) {
-    const erro = new Error('Nao e possivel vincular o pet a um tutor inativo.');
+    const erro = new Error('Nao e possivel vincular o pet a um usuario inativo.');
     erro.status = 400;
     throw erro;
   }
@@ -57,6 +51,25 @@ function temVisaoGeral(usuario) {
   return Boolean(usuario && ['administrador', 'veterinario', 'recepcionista'].includes(usuario.perfil));
 }
 
+function validarTutorDoUsuario(usuario, tutorIdInformado) {
+  if (!usuario) {
+    const erro = new Error('Usuario nao autenticado.');
+    erro.status = 401;
+    throw erro;
+  }
+
+  if (usuario.perfil === 'tutor') {
+    const tutorId = tutorIdInformado || usuario.id;
+    if (String(tutorId) !== String(usuario.id)) {
+      const erro = new Error('O tutor so pode cadastrar um pet vinculado ao seu proprio id.');
+      erro.status = 403;
+      throw erro;
+    }
+  }
+
+  return true;
+}
+
 function usuarioPodeAcessarPet(usuario, pet) {
   if (!usuario) return false;
   if (temVisaoGeral(usuario)) return true;
@@ -68,17 +81,33 @@ function usuarioPodeAcessarPet(usuario, pet) {
 }
 
 const cadastrarPet = asyncHandler(async (req, res) => {
-  const { nome, especie, raca, idade, peso, tutor: tutorId } = req.body;
+  // Tutores sempre criam pets para si mesmos; o cliente não escolhe o vínculo.
+  if (!req.usuario) {
+    const erro = new Error('Usuario nao autenticado.');
+    erro.status = 401;
+    throw erro;
+  }
+  const tutorIdInformado = req.body.tutor || req.body.tutorId;
+  const tutorIdFinal = req.usuario?.perfil === 'tutor'
+    ? req.usuario.id
+    : (tutorIdInformado || req.usuario.id);
 
-  await validarTutor(tutorId);
+  if (!req.body.nome || !req.body.especie || req.body.idade === undefined || req.body.peso === undefined) {
+    const erro = new Error('Informe nome, especie, idade e peso do pet.');
+    erro.status = 400;
+    throw erro;
+  }
+
+  validarTutorDoUsuario(req.usuario, tutorIdFinal);
+  await validarTutor(tutorIdFinal);
 
   const pet = await Pet.create({
-    nome,
-    especie,
-    raca,
-    idade,
-    peso,
-    tutor: tutorId,
+    nome: req.body.nome,
+    especie: req.body.especie,
+    raca: req.body.raca,
+    idade: req.body.idade,
+    peso: req.body.peso,
+    tutor: tutorIdFinal,
   });
 
   await pet.populate('tutor', 'nome email telefone perfil');
@@ -157,4 +186,5 @@ module.exports = {
   buscarPetPorId,
   atualizarPet,
   removerPet,
+  validarTutorDoUsuario,
 };

@@ -6,6 +6,10 @@ const Usuario = require('../models/Usuario');
 
 const asyncHandler = require('../utils/asyncHandler');
 
+function podeRegistrarConsulta(usuario) {
+  return Boolean(usuario && ['veterinario', 'administrador'].includes(usuario.perfil));
+}
+
 const criarConsulta = asyncHandler(async (req, res) => {
   const {
     pet,
@@ -15,15 +19,23 @@ const criarConsulta = asyncHandler(async (req, res) => {
     observacoes,
   } = req.body;
 
-  if (!pet || !veterinario || !motivoConsulta || !motivoConsulta.trim()) {
-    return res.status(400).json({
-      erro: 'Pet, veterinario e motivo da consulta sao obrigatorios.',
+  if (!podeRegistrarConsulta(req.usuario)) {
+    return res.status(403).json({
+      erro: 'Acesso negado. Apenas veterinario ou administrador podem registrar prontuarios.',
     });
   }
 
+  if (!pet || !motivoConsulta || !motivoConsulta.trim()) {
+    return res.status(400).json({
+      erro: 'Pet e motivo da consulta sao obrigatorios.',
+    });
+  }
+
+  const veterinarioId = veterinario || req.usuario.id;
+
   if (
     !mongoose.Types.ObjectId.isValid(pet) ||
-    !mongoose.Types.ObjectId.isValid(veterinario)
+    !mongoose.Types.ObjectId.isValid(veterinarioId)
   ) {
     return res.status(400).json({
       erro: 'ID do pet ou do veterinario invalido.',
@@ -47,7 +59,7 @@ const criarConsulta = asyncHandler(async (req, res) => {
     });
   }
 
-  const veterinarioEncontrado = await Usuario.findById(veterinario);
+  const veterinarioEncontrado = await Usuario.findById(veterinarioId);
 
   if (!veterinarioEncontrado) {
     return res.status(404).json({
@@ -55,9 +67,9 @@ const criarConsulta = asyncHandler(async (req, res) => {
     });
   }
 
-  if (veterinarioEncontrado.perfil !== 'veterinario') {
+  if (!['veterinario', 'administrador'].includes(veterinarioEncontrado.perfil)) {
     return res.status(403).json({
-      erro: 'O usuario informado nao possui perfil de veterinario.',
+      erro: 'O usuario informado nao possui perfil de veterinario ou administrador.',
     });
   }
 
@@ -69,7 +81,7 @@ const criarConsulta = asyncHandler(async (req, res) => {
 
   const consulta = await Consulta.create({
     pet,
-    veterinario,
+    veterinario: veterinarioId,
     motivoConsulta,
     procedimentos,
     observacoes,
@@ -166,4 +178,5 @@ module.exports = {
   listarTodasConsultas,
   atualizarConsulta,
   listarConsultasPorPet,
+  podeRegistrarConsulta,
 };

@@ -37,14 +37,51 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const [usuariosPage, setUsuariosPage] = useState(1);
   const [petSelecionadoId, setPetSelecionadoId] = useState(null);
   const [petEditando, setPetEditando] = useState(false);
+  const [mostrarFormProntuario, setMostrarFormProntuario] = useState(false);
+  const [mostrarFormPet, setMostrarFormPet] = useState(false);
+  const [petFormStatus, setPetFormStatus] = useState('');
   const [petForm, setPetForm] = useState({ nome: '', especie: '', raca: '', idade: '', peso: '' });
+  const [consultaForm, setConsultaForm] = useState({
+    petId: '',
+    veterinario: '',
+    data: '',
+    motivoConsulta: '',
+    procedimentos: '',
+    observacoes: '',
+    status: 'agendada',
+  });
+  const [prontuarioForm, setProntuarioForm] = useState({
+    tipo: 'consulta',
+    petId: '',
+    veterinario: '',
+    data: '',
+    motivo: '',
+    procedimentos: '',
+    observacoes: '',
+    tipoVacina: '',
+    reforco: '',
+  });
+  const [prontuarioManual, setProntuarioManual] = useState([]);
+  const [vacinasAdicionadas, setVacinasAdicionadas] = useState([]);
+  const [atalhoAtivo, setAtalhoAtivo] = useState('dashboard');
+  const [abaAtiva, setAbaAtiva] = useState('dashboard');
 
-  const { data: petsData, loading: petsLoading, error: petsError } = useQuery(GET_PETS);
+  const { data: petsData, loading: petsLoading, error: petsError, refetch: refetchPets } = useQuery(GET_PETS);
   const { data: usuariosData, loading: usuariosLoading, error: usuariosError, refetch: refetchUsuarios } = useQuery(GET_USUARIOS);
   const { data: consultasData, loading: consultasLoading, error: consultasError } = useQuery(GET_CONSULTAS);
   const { data: petDetalheData, loading: petDetalheLoading, error: petDetalheError } = useQuery(GET_PET, {
     variables: { id: petSelecionadoId || '' },
     skip: !petSelecionadoId,
+    fetchPolicy: 'cache-and-network',
+  });
+  const { data: consultasPetData, loading: consultasPetLoading, error: consultasPetError } = useQuery(GET_CONSULTAS_POR_PET, {
+    variables: { petId: petSelecionadoId || '' },
+    skip: !petSelecionadoId || !isTutorView,
+    fetchPolicy: 'cache-and-network',
+  });
+  const { data: vacinasPetData, loading: vacinasPetLoading, error: vacinasPetError } = useQuery(GET_VACINAS_POR_PET, {
+    variables: { petId: petSelecionadoId || '' },
+    skip: !petSelecionadoId || !isTutorView,
     fetchPolicy: 'cache-and-network',
   });
 
@@ -58,11 +95,17 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     : petsBase;
   const usuarios = usuariosData?.usuarios ?? [];
   const consultas = consultasData?.consultas ?? fallbackConsultas;
+  const consultasPet = consultasPetData?.consultasPorPet ?? [];
+  const vacinasPet = vacinasPetData?.vacinasPorPet ?? [];
   const petSelecionado = petDetalheData?.pet || pets.find((pet) => pet.id === petSelecionadoId) || pets[0] || null;
-  const prontuarios = consultas.filter((consulta) => {
-    if (!petSelecionado) return true;
-    return consulta.pet?.nome === petSelecionado.nome;
-  });
+  const prontuarios = isTutorView
+    ? consultasPet
+    : consultas.filter((consulta) => {
+        if (!petSelecionado) return true;
+        return consulta.pet?.nome === petSelecionado.nome;
+      });
+  const historicoProntuarios = [...prontuarioManual, ...prontuarios];
+  const vacinasAtuais = [...vacinasAdicionadas, ...vacinasPet];
 
   const totalPetsPages = Math.max(1, Math.ceil(pets.length / pageSize));
   const totalUsuariosPages = Math.max(1, Math.ceil(usuarios.length / pageSize));
@@ -113,9 +156,24 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     await atualizarUsuarioAdmin(usuarioId, { ativo });
   };
 
+  const navegarParaSecao = (secao) => {
+    setAtalhoAtivo(secao);
+    setAbaAtiva(secao);
+    const elemento = document.getElementById(secao);
+
+    if (elemento) {
+      elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const abrirPet = (pet) => {
     setPetSelecionadoId(pet.id);
     setPetEditando(false);
+    setConsultaForm((prev) => ({
+      ...prev,
+      petId: pet.id,
+      veterinario: prev.veterinario || usuarioAtual?.nome || '',
+    }));
     setPetForm({
       nome: pet.nome || '',
       especie: pet.especie || '',
@@ -142,6 +200,271 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     setPetForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleConsultaFieldChange = (event) => {
+    const { name, value } = event.target;
+    setConsultaForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleProntuarioFieldChange = (event) => {
+    const { name, value } = event.target;
+    setProntuarioForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const limparFormularioConsulta = () => {
+    setConsultaForm({
+      petId: petSelecionado?.id || '',
+      veterinario: '',
+      data: '',
+      motivoConsulta: '',
+      procedimentos: '',
+      observacoes: '',
+      status: 'agendada',
+    });
+  };
+
+  const criarPet = async () => {
+    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
+
+    if (!token) {
+      setPetFormStatus('Sua sessão expirou. Faça login novamente.');
+      return;
+    }
+
+    try {
+      if (!petForm.nome.trim() || !petForm.especie.trim() || petForm.idade === '' || petForm.peso === '') {
+        setPetFormStatus('Preencha nome, espécie, idade e peso para cadastrar o pet.');
+        return;
+      }
+      if (Number(petForm.idade) < 0 || Number(petForm.peso) < 0) {
+        setPetFormStatus('Idade e peso não podem ser negativos.');
+        return;
+      }
+      setPetFormStatus('');
+      const payload = {
+        nome: petForm.nome.trim(),
+        especie: petForm.especie.trim(),
+        raca: petForm.raca.trim(),
+        idade: Number(petForm.idade),
+        peso: Number(petForm.peso),
+      };
+      if (perfil === 'tutor') {
+        delete payload.tutor;
+      } else {
+        payload.tutor = String(usuarioAtual?.id || '');
+      }
+
+      const response = await fetch('http://localhost:3000/pets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.erro || 'Não foi possível cadastrar o pet.');
+      }
+
+      setMostrarFormPet(false);
+      setPetForm({ nome: '', especie: '', raca: '', idade: '', peso: '' });
+      setPetFormStatus('Pet cadastrado com sucesso!');
+      await refetchPets();
+    } catch (error) {
+      setPetFormStatus(error.message || 'Não foi possível cadastrar o pet.');
+    }
+  };
+
+  const desativarPet = async (petId) => {
+    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
+
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:3000/pets/${petId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.erro || 'Não foi possível remover o pet.');
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const salvarConsulta = async () => {
+    if (!consultaForm.petId || !consultaForm.motivoConsulta || !consultaForm.data || !usuarioAtual?.id) {
+      return;
+    }
+
+    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
+
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/consultas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          pet: consultaForm.petId,
+          veterinario: usuarioAtual.id,
+          motivoConsulta: consultaForm.motivoConsulta,
+          procedimentos: consultaForm.procedimentos
+            ? consultaForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean)
+            : [],
+          observacoes: consultaForm.observacoes,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.erro || 'Não foi possível registrar a consulta.');
+      }
+
+      const petRegistrado = pets.find((pet) => pet.id === consultaForm.petId) || petSelecionado;
+      const consultaRegistrada = {
+        id: result.consulta?.id || result.consulta?._id || `consulta-${Date.now()}`,
+        createdAt: result.consulta?.createdAt || consultaForm.data,
+        motivoConsulta: result.consulta?.motivoConsulta || consultaForm.motivoConsulta,
+        procedimentos: result.consulta?.procedimentos || (consultaForm.procedimentos ? consultaForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean) : ['Consulta registrada']),
+        observacoes: result.consulta?.observacoes || consultaForm.observacoes || 'Sem observações adicionais.',
+        veterinario: {
+          nome: usuarioAtual?.nome || 'Veterinário',
+          perfil: usuarioAtual?.perfil || 'veterinario',
+        },
+        pet: { nome: petRegistrado?.nome || 'Pet' },
+      };
+
+      setProntuarioManual((prev) => [consultaRegistrada, ...prev]);
+      limparFormularioConsulta();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const salvarProntuario = async () => {
+    if (!prontuarioForm.petId || !prontuarioForm.data || !usuarioAtual?.id) {
+      return;
+    }
+
+    const petSelecionadoNoRegistro = pets.find((pet) => pet.id === prontuarioForm.petId) || petSelecionado;
+    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
+
+    if (!token) {
+      return;
+    }
+
+    try {
+      if (prontuarioForm.tipo === 'vacina') {
+        if (!prontuarioForm.tipoVacina) {
+          return;
+        }
+
+        const response = await fetch('http://localhost:3000/vacinas', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            pet: prontuarioForm.petId,
+            tipo: prontuarioForm.tipoVacina,
+            dataAplicacao: prontuarioForm.data,
+            dataPrevistaReforco: prontuarioForm.reforco || null,
+            observacoes: prontuarioForm.observacoes,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.erro || 'Não foi possível registrar a vacina.');
+        }
+
+        const novaVacina = {
+          id: result.id || result._id || `manual-vacina-${Date.now()}`,
+          tipo: result.tipo || prontuarioForm.tipoVacina,
+          dataAplicacao: result.dataAplicacao || prontuarioForm.data,
+          dataPrevistaReforco: result.dataPrevistaReforco || prontuarioForm.reforco || null,
+          observacoes: result.observacoes || prontuarioForm.observacoes || 'Vacina registrada no prontuário.',
+          veterinario: { nome: usuarioAtual?.nome || 'Veterinário' },
+          pet: { nome: petSelecionadoNoRegistro?.nome || 'Pet' },
+        };
+
+        setVacinasAdicionadas((prev) => [novaVacina, ...prev]);
+      } else {
+        if (!prontuarioForm.motivo) {
+          return;
+        }
+
+        const response = await fetch('http://localhost:3000/consultas', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            pet: prontuarioForm.petId,
+            veterinario: usuarioAtual.id,
+            motivoConsulta: prontuarioForm.motivo,
+            procedimentos: prontuarioForm.procedimentos
+              ? prontuarioForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean)
+              : [],
+            observacoes: prontuarioForm.observacoes,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.erro || 'Não foi possível registrar o prontuário.');
+        }
+
+        const novoProntuario = {
+          id: result.consulta?.id || result.consulta?._id || `manual-prontuario-${Date.now()}`,
+          createdAt: result.consulta?.createdAt || prontuarioForm.data,
+          motivoConsulta: result.consulta?.motivoConsulta || prontuarioForm.motivo,
+          procedimentos: result.consulta?.procedimentos || (prontuarioForm.procedimentos ? prontuarioForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean) : ['Atendimento registrado']),
+          observacoes: result.consulta?.observacoes || prontuarioForm.observacoes || 'Consulta registrada no prontuário.',
+          veterinario: { nome: usuarioAtual?.nome || 'Veterinário' },
+          pet: { nome: petSelecionadoNoRegistro?.nome || 'Pet' },
+        };
+
+        setProntuarioManual((prev) => [novoProntuario, ...prev]);
+      }
+
+      setProntuarioForm({
+        tipo: 'consulta',
+        petId: petSelecionado?.id || '',
+        veterinario: '',
+        data: '',
+        motivo: '',
+        procedimentos: '',
+        observacoes: '',
+        tipoVacina: '',
+        reforco: '',
+      });
+      setMostrarFormProntuario(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const salvarEdicaoPet = async () => {
     if (!petSelecionado) return;
 
@@ -163,8 +486,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           idade: Number(petForm.idade),
           peso: Number(petForm.peso),
         }),
-      });
-
+      })
       const result = await response.json();
 
       if (!response.ok) {
@@ -203,25 +525,71 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
       </header>
 
       <main className="dashboard-shell">
-        <aside className="dashboard-sidebar">
+        <aside id="pets" className="dashboard-sidebar">
           <div className="breadcrumbs-panel">
             <div className="panel-header compact-header">
               <h3>Atalhos</h3>
             </div>
             <nav className="breadcrumbs-nav" aria-label="Atalhos de telas">
-              <button type="button" className="breadcrumb-link active">Dashboard</button>
-              <button type="button" className="breadcrumb-link">Pets</button>
-              <button type="button" className="breadcrumb-link">Prontuários</button>
-              <button type="button" className="breadcrumb-link">Usuários</button>
-              <button type="button" className="breadcrumb-link">Login</button>
-              <button type="button" className="breadcrumb-link">Cadastro</button>
+              <button type="button" className={`breadcrumb-link ${atalhoAtivo === 'dashboard' ? 'active' : ''}`} onClick={() => navegarParaSecao('dashboard')}>Dashboard</button>
+              <button type="button" className={`breadcrumb-link ${atalhoAtivo === 'pets' ? 'active' : ''}`} onClick={() => navegarParaSecao('pets')}>Pets</button>
+              <button type="button" className={`breadcrumb-link ${atalhoAtivo === 'prontuarios' ? 'active' : ''}`} onClick={() => navegarParaSecao('prontuarios')}>Prontuários</button>
+              <button type="button" className={`breadcrumb-link ${atalhoAtivo === 'consultas' ? 'active' : ''}`} onClick={() => navegarParaSecao('consultas')}>Consultas</button>
+              <button type="button" className={`breadcrumb-link ${atalhoAtivo === 'agendamentos' ? 'active' : ''}`} onClick={() => navegarParaSecao('agendamentos')}>Agendamentos</button>
+              <button type="button" className={`breadcrumb-link ${atalhoAtivo === 'vacinas' ? 'active' : ''}`} onClick={() => navegarParaSecao('vacinas')}>Vacinas</button>
+              <button type="button" className={`breadcrumb-link ${atalhoAtivo === 'usuarios' ? 'active' : ''}`} onClick={() => navegarParaSecao('usuarios')}>Usuários</button>
             </nav>
           </div>
 
-          <div className="panel-header">
-            <h3>Pets</h3>
-            <button type="button" className="panel-action">+ Novo</button>
-          </div>
+          {!isTutorView && (
+            <div className="panel-header">
+              <h3>Pets</h3>
+              <button type="button" className="panel-action" onClick={() => setMostrarFormPet((prev) => !prev)}>{mostrarFormPet ? 'Fechar' : '+ Novo'}</button>
+            </div>
+          )}
+
+          {!isTutorView && mostrarFormPet && pets.length > 0 && (
+            <div className="pet-detail-panel" style={{ marginBottom: '16px' }}>
+              <div className="pet-detail-header">
+                <div className="pet-detail-avatar">+</div>
+                <div>
+                  <h3>Novo pet</h3>
+                  <span>Adicionar animal ao cadastro</span>
+                </div>
+              </div>
+
+              <div className="pet-edit-form">
+                <div className="pet-edit-grid">
+                  <label>
+                    <span>Nome</span>
+                    <input type="text" name="nome" value={petForm.nome} onChange={handlePetFieldChange} required />
+                  </label>
+                  <label>
+                    <span>Espécie</span>
+                    <input type="text" name="especie" value={petForm.especie} onChange={handlePetFieldChange} required />
+                  </label>
+                  <label>
+                    <span>Raça</span>
+                    <input type="text" name="raca" value={petForm.raca} onChange={handlePetFieldChange} />
+                  </label>
+                  <label>
+                    <span>Idade</span>
+                    <input type="number" min="0" name="idade" value={petForm.idade} onChange={handlePetFieldChange} required />
+                  </label>
+                  <label>
+                    <span>Peso</span>
+                    <input type="number" min="0" step="0.1" name="peso" value={petForm.peso} onChange={handlePetFieldChange} required />
+                  </label>
+                </div>
+
+                <div className="pet-edit-actions">
+                  <button type="button" className="secondary-button" onClick={() => setMostrarFormPet(false)}>Cancelar</button>
+                  <button type="button" className="primary-button small-button" onClick={criarPet}>Salvar pet</button>
+                </div>
+                {petFormStatus && <p className="status-message" role="status">{petFormStatus}</p>}
+              </div>
+            </div>
+          )}
 
           <div className="pet-list">
             {petsLoading ? (
@@ -230,20 +598,22 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
               <p className="empty-state">Não foi possível carregar os pets.</p>
             ) : (
               petsPagina.map((pet) => (
-                <button
-                  type="button"
-                  key={pet.id}
-                  className={`pet-card ${petSelecionado?.id === pet.id ? 'active' : ''}`}
-                  onClick={() => abrirPet(pet)}
-                >
-                  <div className="pet-avatar">{pet.nome?.charAt(0).toUpperCase() || 'P'}</div>
-                  <div className="pet-info">
-                    <strong>{pet.nome}</strong>
-                    <span>
-                      {pet.especie} · {pet.raca}
-                    </span>
-                  </div>
-                </button>
+                <div key={pet.id} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className={`pet-card ${petSelecionado?.id === pet.id ? 'active' : ''}`}
+                    onClick={() => abrirPet(pet)}
+                    style={{ flex: 1 }}
+                  >
+                    <div className="pet-avatar">{pet.nome?.charAt(0).toUpperCase() || 'P'}</div>
+                    <div className="pet-info">
+                      <strong>{pet.nome}</strong>
+                      <span>
+                        {pet.especie} · {pet.raca}
+                      </span>
+                    </div>
+                  </button>
+                </div>
               ))
             )}
           </div>
@@ -262,30 +632,65 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
         </aside>
 
         <section className="dashboard-content">
-          <div className="summary-grid">
-            <div className="summary-card summary-primary">
-              <span>Pets ativos</span>
-              <strong>{pets.length}</strong>
+          {(abaAtiva === 'dashboard' || abaAtiva === 'pets') && (
+            <div id="dashboard" className="summary-grid">
+              <div className="summary-card summary-primary">
+                <span>Pets ativos</span>
+                <strong>{pets.length}</strong>
+              </div>
+              <div className="summary-card">
+                <span>Prontuários</span>
+                <strong>{prontuarios.length}</strong>
+              </div>
+              <div className="summary-card">
+                <span>Última consulta</span>
+                <strong>{prontuarios[0] ? 'Hoje' : 'Sem registro'}</strong>
+              </div>
             </div>
-            <div className="summary-card">
-              <span>Prontuários</span>
-              <strong>{prontuarios.length}</strong>
-            </div>
-            <div className="summary-card">
-              <span>Última consulta</span>
-              <strong>{prontuarios[0] ? 'Hoje' : 'Sem registro'}</strong>
-            </div>
-          </div>
+          )}
 
-          <div className="patient-header">
-            <div>
-              <small>Paciente selecionado</small>
-              <h2>{petSelecionado ? petSelecionado.nome : 'Nenhum pet encontrado'}</h2>
+          {abaAtiva === 'dashboard' && (
+            <div className="pet-detail-panel" style={{ marginBottom: '20px' }}>
+              <div className="pet-detail-header">
+                <div className="pet-detail-avatar">{(usuarioAtual?.nome || 'U').charAt(0).toUpperCase()}</div>
+                <div>
+                  <h3>{usuarioAtual?.nome || 'Usuário'}</h3>
+                  <span>{usuarioAtual?.perfil || 'perfil'} · {usuarioAtual?.email || 'E-mail não informado'}</span>
+                </div>
+              </div>
+              <div className="pet-detail-grid">
+                <div className="detail-item">
+                  <span>Nome</span>
+                  <strong>{usuarioAtual?.nome || 'Não informado'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Email</span>
+                  <strong>{usuarioAtual?.email || 'Não informado'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Perfil</span>
+                  <strong>{usuarioAtual?.perfil || 'Não informado'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Telefone</span>
+                  <strong>{usuarioAtual?.telefone || 'Não informado'}</strong>
+                </div>
+              </div>
             </div>
-            <button type="button" className="primary-button small-button">Abrir prontuário</button>
-          </div>
+          )}
 
-          <div className="pet-detail-panel">
+          {(abaAtiva === 'dashboard' || abaAtiva === 'pets') && (
+            <div className="patient-header">
+              <div>
+                <small>Paciente selecionado</small>
+                <h2>{petSelecionado ? petSelecionado.nome : 'Nenhum pet encontrado'}</h2>
+              </div>
+              <button type="button" className="primary-button small-button">Abrir prontuário</button>
+            </div>
+          )}
+
+          {(abaAtiva === 'dashboard' || abaAtiva === 'pets') && (
+            <div className="pet-detail-panel">
             {petDetalheLoading ? (
               <p className="empty-state">Carregando dados do pet...</p>
             ) : petDetalheError ? (
@@ -298,12 +703,12 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                     <h3>{petSelecionado.nome}</h3>
                     <span>{petSelecionado.especie} · {petSelecionado.raca || 'Raça não informada'}</span>
                   </div>
-                  {!petEditando && (
+                  {!isTutorView && !petEditando && (
                     <button type="button" className="secondary-button" onClick={iniciarEdicaoPet}>Editar</button>
                   )}
                 </div>
 
-                {petEditando ? (
+                {petEditando && !isTutorView ? (
                   <div className="pet-edit-form">
                     <div className="pet-edit-grid">
                       <label>
@@ -371,12 +776,211 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                 )}
               </>
             ) : (
-              <p className="empty-state">Selecione um pet para ver os detalhes.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'flex-start' }}>
+                <p className="empty-state">
+                  {pets.length === 0
+                    ? 'Você ainda não possui pets cadastrados.'
+                    : 'Selecione um pet para ver os detalhes.'}
+                </p>
+                {!isTutorView && (
+                  <>
+                    <button
+                      type="button"
+                      className="primary-button small-button"
+                      onClick={() => setMostrarFormPet((prev) => !prev)}
+                    >
+                      {mostrarFormPet ? 'Fechar cadastro' : 'Cadastrar pet'}
+                    </button>
+
+                    {mostrarFormPet && (
+                      <div className="pet-detail-panel" style={{ width: '100%', marginTop: '8px' }}>
+                        <div className="pet-detail-header">
+                          <div className="pet-detail-avatar">+</div>
+                          <div>
+                            <h3>Novo pet</h3>
+                            <span>Adicionar animal ao cadastro</span>
+                          </div>
+                        </div>
+
+                        <div className="pet-edit-form">
+                          <div className="pet-edit-grid">
+                            <label>
+                              <span>Nome</span>
+                              <input type="text" name="nome" value={petForm.nome} onChange={handlePetFieldChange} required />
+                            </label>
+                            <label>
+                              <span>Espécie</span>
+                              <input type="text" name="especie" value={petForm.especie} onChange={handlePetFieldChange} required />
+                            </label>
+                            <label>
+                              <span>Raça</span>
+                              <input type="text" name="raca" value={petForm.raca} onChange={handlePetFieldChange} />
+                            </label>
+                            <label>
+                              <span>Idade</span>
+                              <input type="number" min="0" name="idade" value={petForm.idade} onChange={handlePetFieldChange} required />
+                            </label>
+                            <label>
+                              <span>Peso</span>
+                              <input type="number" min="0" step="0.1" name="peso" value={petForm.peso} onChange={handlePetFieldChange} required />
+                            </label>
+                          </div>
+
+                          <div className="pet-edit-actions">
+                            <button type="button" className="secondary-button" onClick={() => setMostrarFormPet(false)}>Cancelar</button>
+                            <button type="button" className="primary-button small-button" onClick={criarPet}>Salvar pet</button>
+                          </div>
+                          {petFormStatus && <p className="status-message" role="status">{petFormStatus}</p>}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
+          )}
 
-          {!isTutorView && (
-            <div className="admin-list-panel">
+          {(abaAtiva === 'dashboard' || abaAtiva === 'consultas') && (
+            <div id="consultas" className="record-panel">
+              <div className="panel-header">
+                <h3>Consultas</h3>
+                {!isTutorView && <button type="button" className="panel-action">+ Marcar</button>}
+              </div>
+
+              {prontuarios.length > 0 ? prontuarios.map((consulta) => (
+                <article key={consulta.id || Math.random()} className="record-card">
+                  <div className="record-topline">
+                    <span className="record-tag">Consulta</span>
+                    <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
+                  </div>
+                  <h4>{consulta.motivoConsulta || 'Consulta veterinária'}</h4>
+                  <div className="record-meta">
+                    <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
+                    <span>{consulta.pet?.nome || petSelecionado?.nome || 'Pet'}</span>
+                  </div>
+                  <ul>
+                    {(consulta.procedimentos || ['Consulta realizada']).map((item, index) => (
+                      <li key={`${consulta.id || 'consulta'}-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                  {!isTutorView && (
+                    <div className="pet-edit-actions">
+                      <button type="button" className="secondary-button">Desmarcar</button>
+                      <button type="button" className="primary-button small-button">Consultar</button>
+                    </div>
+                  )}
+                </article>
+              )) : (
+                <p className="empty-state">Nenhuma consulta para este pet.</p>
+              )}
+            </div>
+          )}
+
+          {(abaAtiva === 'dashboard' || abaAtiva === 'agendamentos') && (
+            <div id="agendamentos" className="record-panel">
+              <div className="panel-header">
+                <h3>Agendamentos</h3>
+                {!isTutorView && <button type="button" className="panel-action">+ Agendar</button>}
+              </div>
+
+              {prontuarios.length > 0 ? prontuarios.map((consulta) => (
+                <article key={consulta.id || Math.random()} className="record-card">
+                  <div className="record-topline">
+                    <span className="record-tag">Agendamento</span>
+                    <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Sem data'}</time>
+                  </div>
+                  <h4>{consulta.motivoConsulta || 'Consulta agendada'}</h4>
+                  <div className="record-meta">
+                    <span>{consulta.pet?.nome || petSelecionado?.nome || 'Pet'}</span>
+                    <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
+                  </div>
+                  {!isTutorView && (
+                    <div className="pet-edit-actions">
+                      <button type="button" className="secondary-button">Desmarcar</button>
+                      <button type="button" className="primary-button small-button">Confirmar</button>
+                    </div>
+                  )}
+                </article>
+              )) : (
+                <p className="empty-state">Nenhum agendamento registrado.</p>
+              )}
+            </div>
+          )}
+
+          {(abaAtiva === 'dashboard' || abaAtiva === 'vacinas') && (
+            <div id="vacinas" className="record-panel">
+              <div className="panel-header">
+                <h3>Vacinas</h3>
+                {!isTutorView && <button type="button" className="panel-action">+ Agendar</button>}
+              </div>
+
+              {petSelecionado ? (
+                <>
+                  {!isTutorView && (
+                    <>
+                      <div className="pet-detail-panel" style={{ marginBottom: '16px' }}>
+                        <div className="pet-detail-header">
+                          <div className="pet-detail-avatar">{petSelecionado.nome?.charAt(0).toUpperCase() || 'P'}</div>
+                          <div>
+                            <h3>{petSelecionado.nome}</h3>
+                            <span>{petSelecionado.especie} · {petSelecionado.raca || 'Raça não informada'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pet-edit-form">
+                        <div className="pet-edit-grid">
+                          <label>
+                            <span>Tipo da vacina</span>
+                            <input type="text" value={prontuarioForm.tipoVacina} onChange={handleProntuarioFieldChange} name="tipoVacina" placeholder="Ex.: V10, antirrábica, giárdia" />
+                          </label>
+                          <label>
+                            <span>Data da aplicação</span>
+                            <input type="date" value={prontuarioForm.data} onChange={handleProntuarioFieldChange} name="data" />
+                          </label>
+                          <label>
+                            <span>Data prevista do reforço</span>
+                            <input type="date" value={prontuarioForm.reforco} onChange={handleProntuarioFieldChange} name="reforco" />
+                          </label>
+                        </div>
+
+                        <div className="pet-edit-actions">
+                          <button type="button" className="secondary-button" onClick={() => setProntuarioForm((prev) => ({ ...prev, tipoVacina: '', data: '', reforco: '', observacoes: '' }))}>Cancelar</button>
+                          <button type="button" className="primary-button small-button" onClick={salvarProntuario}>Salvar vacinação</button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="record-card" style={{ marginTop: '20px' }}>
+                    <div className="record-topline">
+                      <span className="record-tag">Calendário</span>
+                      <span>Próximas vacinas</span>
+                    </div>
+
+                    {vacinasAtuais.length > 0 ? vacinasAtuais.map((vacina) => (
+                      <div key={vacina.id} style={{ marginTop: '12px', borderTop: '1px solid #edf2f5', paddingTop: '12px' }}>
+                        <h4>{vacina.tipo}</h4>
+                        <ul>
+                          <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
+                          <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
+                          {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
+                        </ul>
+                      </div>
+                    )) : (
+                      <p className="empty-state" style={{ marginTop: '12px' }}>Nenhuma vacina registrada para este pet.</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="empty-state">Selecione um pet para agendar a vacinação.</p>
+              )}
+            </div>
+          )}
+
+          {!isTutorView && (abaAtiva === 'dashboard' || abaAtiva === 'usuarios') && (
+            <div id="usuarios" className="admin-list-panel">
               <div className="panel-header">
                 <h3>Usuários cadastrados</h3>
                 <span className="panel-counter">{usuarios.length}</span>
@@ -445,74 +1049,240 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
             </div>
           )}
 
-          <div className="record-panel">
-            <div className="panel-header">
-              <h3>Prontuários</h3>
-              <button type="button" className="panel-action">Filtrar</button>
-            </div>
+          {(abaAtiva === 'dashboard' || abaAtiva === 'prontuarios') && (
+            <div id="prontuarios" className="record-panel">
+              <div className="panel-header">
+                <h3>Prontuários</h3>
+                {!isTutorView && <button type="button" className="panel-action">Filtrar</button>}
+              </div>
 
-            {isTutorView && consultasPetLoading ? (
-              <p className="empty-state">Carregando prontuário do pet...</p>
-            ) : isTutorView && consultasPetError ? (
-              <p className="empty-state">Não foi possível carregar o prontuário deste pet.</p>
-            ) : (!isTutorView && consultasLoading) ? (
-              <p className="empty-state">Carregando prontuários...</p>
-            ) : (!isTutorView && consultasError) ? (
-              <p className="empty-state">Não foi possível carregar os prontuários.</p>
-            ) : prontuarios.length === 0 && vacinasPet.length === 0 ? (
-              <p className="empty-state">Nenhum prontuário cadastrado para este pet.</p>
-            ) : (
-              <>
-                {prontuarios.map((consulta) => (
-                  <article key={consulta.id} className="record-card">
-                    <div className="record-topline">
-                      <span className="record-tag">Consulta</span>
-                      <time>{new Date(consulta.createdAt).toLocaleDateString('pt-BR')}</time>
+              {!isTutorView && (
+                <div className="pet-detail-panel" style={{ marginBottom: '18px' }}>
+                  <div className="pet-detail-header">
+                    <div className="pet-detail-avatar">+</div>
+                    <div>
+                      <h3>Nova consulta</h3>
+                      <span>Registrar atendimento veterinário</span>
+                    </div>
+                  </div>
+
+                  <div className="pet-edit-form">
+                    <div className="pet-edit-grid">
+                      <label>
+                        <span>Pet</span>
+                        <select name="petId" value={consultaForm.petId} onChange={handleConsultaFieldChange}>
+                          <option value="">Selecione o pet</option>
+                          {pets.map((pet) => (
+                            <option key={pet.id} value={pet.id}>{pet.nome}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>Veterinário</span>
+                        <input
+                          type="text"
+                          name="veterinario"
+                          value={consultaForm.veterinario}
+                          onChange={handleConsultaFieldChange}
+                          placeholder="Nome do veterinário"
+                        />
+                      </label>
+                      <label>
+                        <span>Data da consulta</span>
+                        <input type="date" name="data" value={consultaForm.data} onChange={handleConsultaFieldChange} />
+                      </label>
+                      <label>
+                        <span>Status</span>
+                        <select name="status" value={consultaForm.status} onChange={handleConsultaFieldChange}>
+                          <option value="agendada">Agendada</option>
+                          <option value="realizada">Realizada</option>
+                          <option value="cancelada">Cancelada</option>
+                        </select>
+                      </label>
+                      <label style={{ gridColumn: '1 / -1' }}>
+                        <span>Motivo da consulta</span>
+                        <input
+                          type="text"
+                          name="motivoConsulta"
+                          value={consultaForm.motivoConsulta}
+                          onChange={handleConsultaFieldChange}
+                          placeholder="Ex.: Consulta de rotina, dor abdominal, vacinação..."
+                        />
+                      </label>
+                      <label style={{ gridColumn: '1 / -1' }}>
+                        <span>Procedimentos realizados</span>
+                        <textarea
+                          name="procedimentos"
+                          value={consultaForm.procedimentos}
+                          onChange={handleConsultaFieldChange}
+                          rows="3"
+                          placeholder="Descreva exames, medicamentos, procedimentos e evolução."
+                        />
+                      </label>
+                      <label style={{ gridColumn: '1 / -1' }}>
+                        <span>Observações</span>
+                        <textarea
+                          name="observacoes"
+                          value={consultaForm.observacoes}
+                          onChange={handleConsultaFieldChange}
+                          rows="3"
+                          placeholder="Informe sintomas, conduta, orientações e retorno."
+                        />
+                      </label>
                     </div>
 
-                    <h4>{consulta.motivoConsulta}</h4>
+                    <div className="pet-edit-actions">
+                      <button type="button" className="secondary-button" onClick={limparFormularioConsulta}>Limpar</button>
+                      <button type="button" className="primary-button small-button" onClick={salvarConsulta}>Salvar consulta</button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                    <div className="record-meta">
-                      <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
-                      <span>{consulta.pet?.nome || petSelecionado?.nome}</span>
+              {!isTutorView && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                  <button type="button" className="primary-button small-button" onClick={() => setMostrarFormProntuario((prev) => !prev)}>
+                    {mostrarFormProntuario ? 'Fechar prontuário' : 'Adicionar prontuário'}
+                  </button>
+                </div>
+              )}
+
+              {mostrarFormProntuario && !isTutorView && (
+                <div className="pet-detail-panel" style={{ marginBottom: '18px' }}>
+                  <div className="pet-detail-header">
+                    <div className="pet-detail-avatar">+</div>
+                    <div>
+                      <h3>Adicionar prontuário</h3>
+                      <span>Registrar consulta ou vacina para qualquer pet</span>
+                    </div>
+                  </div>
+
+                  <div className="pet-edit-form">
+                    <div className="pet-edit-grid">
+                      <label>
+                        <span>Tipo</span>
+                        <select name="tipo" value={prontuarioForm.tipo} onChange={handleProntuarioFieldChange}>
+                          <option value="consulta">Consulta</option>
+                          <option value="vacina">Vacina</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Pet</span>
+                        <select name="petId" value={prontuarioForm.petId} onChange={handleProntuarioFieldChange}>
+                          <option value="">Selecione o pet</option>
+                          {pets.map((pet) => (
+                            <option key={pet.id} value={pet.id}>{pet.nome}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>Veterinário</span>
+                        <input type="text" name="veterinario" value={prontuarioForm.veterinario} onChange={handleProntuarioFieldChange} placeholder="Nome do veterinário" />
+                      </label>
+                      <label>
+                        <span>Data</span>
+                        <input type="date" name="data" value={prontuarioForm.data} onChange={handleProntuarioFieldChange} />
+                      </label>
+                      {prontuarioForm.tipo === 'vacina' ? (
+                        <>
+                          <label>
+                            <span>Tipo da vacina</span>
+                            <input type="text" name="tipoVacina" value={prontuarioForm.tipoVacina} onChange={handleProntuarioFieldChange} placeholder="Ex.: V10" />
+                          </label>
+                          <label>
+                            <span>Reforço</span>
+                            <input type="date" name="reforco" value={prontuarioForm.reforco} onChange={handleProntuarioFieldChange} />
+                          </label>
+                        </>
+                      ) : (
+                        <label style={{ gridColumn: '1 / -1' }}>
+                          <span>Motivo da consulta</span>
+                          <input type="text" name="motivo" value={prontuarioForm.motivo} onChange={handleProntuarioFieldChange} placeholder="Ex.: Dor abdominal, check-up, vacinação..." />
+                        </label>
+                      )}
+                      {prontuarioForm.tipo === 'consulta' && (
+                        <label style={{ gridColumn: '1 / -1' }}>
+                          <span>Procedimentos</span>
+                          <textarea name="procedimentos" rows="3" value={prontuarioForm.procedimentos} onChange={handleProntuarioFieldChange} placeholder="Descreva os procedimentos realizados." />
+                        </label>
+                      )}
+                      <label style={{ gridColumn: '1 / -1' }}>
+                        <span>Observações</span>
+                        <textarea name="observacoes" rows="3" value={prontuarioForm.observacoes} onChange={handleProntuarioFieldChange} placeholder="Descreva o atendimento, evolução e orientações." />
+                      </label>
                     </div>
 
-                    <ul>
-                      {consulta.procedimentos?.map((procedimento, index) => (
-                        <li key={`${consulta.id}-${index}`}>{procedimento}</li>
-                      ))}
-                    </ul>
-
-                    <p>{consulta.observacoes}</p>
-                  </article>
-                ))}
-
-                {vacinasPet.length > 0 && (
-                  <article className="record-card">
-                    <div className="record-topline">
-                      <span className="record-tag">Vacinas</span>
-                      <span>{vacinasPet.length} registro(s)</span>
+                    <div className="pet-edit-actions">
+                      <button type="button" className="secondary-button" onClick={() => setMostrarFormProntuario(false)}>Cancelar</button>
+                      <button type="button" className="primary-button small-button" onClick={salvarProntuario}>Salvar</button>
                     </div>
+                  </div>
+                </div>
+              )}
 
-                    {vacinasPet.map((vacina) => (
-                      <div key={vacina.id} style={{ marginTop: '12px', borderTop: '1px solid #edf2f5', paddingTop: '12px' }}>
-                        <h4>{vacina.tipo}</h4>
-                        <div className="record-meta">
-                          <span>{vacina.veterinario?.nome || 'Veterinário'}</span>
-                          <span>{vacina.pet?.nome || petSelecionado?.nome}</span>
-                        </div>
-                        <ul>
-                          <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
-                          <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
-                          {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
-                        </ul>
+              {isTutorView && consultasPetLoading ? (
+                <p className="empty-state">Carregando prontuário do pet...</p>
+              ) : isTutorView && consultasPetError ? (
+                <p className="empty-state">Não foi possível carregar o prontuário deste pet.</p>
+              ) : (!isTutorView && consultasLoading) ? (
+                <p className="empty-state">Carregando prontuários...</p>
+              ) : (!isTutorView && consultasError) ? (
+                <p className="empty-state">Não foi possível carregar os prontuários.</p>
+              ) : historicoProntuarios.length === 0 && vacinasAtuais.length === 0 ? (
+                <p className="empty-state">Nenhum prontuário cadastrado para este pet.</p>
+              ) : (
+                <>
+                  {historicoProntuarios.map((consulta) => (
+                    <article key={consulta.id} className="record-card">
+                      <div className="record-topline">
+                        <span className="record-tag">Consulta</span>
+                        <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
                       </div>
-                    ))}
-                  </article>
-                )}
-              </>
-            )}
-          </div>
+
+                      <h4>{consulta.motivoConsulta || 'Consulta veterinária'}</h4>
+
+                      <div className="record-meta">
+                        <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
+                        <span>{consulta.pet?.nome || petSelecionado?.nome}</span>
+                      </div>
+
+                      <ul>
+                        {(consulta.procedimentos || ['Consulta realizada']).map((procedimento, index) => (
+                          <li key={`${consulta.id}-${index}`}>{procedimento}</li>
+                        ))}
+                      </ul>
+
+                      <p>{consulta.observacoes || 'Sem observações adicionais.'}</p>
+                    </article>
+                  ))}
+
+                  {vacinasAtuais.length > 0 && (
+                    <article className="record-card">
+                      <div className="record-topline">
+                        <span className="record-tag">Vacinas</span>
+                        <span>{vacinasAtuais.length} registro(s)</span>
+                      </div>
+
+                      {vacinasAtuais.map((vacina) => (
+                        <div key={vacina.id} style={{ marginTop: '12px', borderTop: '1px solid #edf2f5', paddingTop: '12px' }}>
+                          <h4>{vacina.tipo}</h4>
+                          <div className="record-meta">
+                            <span>{vacina.veterinario?.nome || 'Veterinário'}</span>
+                            <span>{vacina.pet?.nome || petSelecionado?.nome}</span>
+                          </div>
+                          <ul>
+                            <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
+                            <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
+                            {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
+                          </ul>
+                        </div>
+                      ))}
+                    </article>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </section>
       </main>
     </div>

@@ -962,13 +962,23 @@
   font-weight: 700;
 }
 
-.pet-edit-grid input {
-  height: 42px;
+.pet-edit-grid input,
+.pet-edit-grid select,
+.pet-edit-grid textarea {
+  width: 100%;
+  min-height: 42px;
   border: 1px solid #dfeaf0;
   border-radius: 10px;
-  padding: 0 12px;
+  padding: 10px 12px;
   color: #1f3241;
   background: #fff;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.pet-edit-grid textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .pet-edit-actions {
