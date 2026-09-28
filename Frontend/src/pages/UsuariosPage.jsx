@@ -1,13 +1,9 @@
-export default function UsuariosPage() {
+export default function PetsPage() {
   return (
     <section className="page-shell">
       <div className="page-header">
-        <h1>Usuários</h1>
-        <span className="page-badge">Em branco</span>
+        <h1>Pets & Prontuários</h1>
       </div>
-      <p className="page-description">
-        Tela em branco para gerenciamento de usuários e perfis.
-      </p>
     </section>
   )
 }

@@ -30,6 +30,11 @@ const typeDefs = `#graphql
     observacoes: String
     pet: Pet
     veterinario: Usuario!
+    veterinarioReserva: Usuario
+    tipoAgendamento: String!
+    justificativaEmergencia: String
+    concluidaEm: String
+    concluidaPor: Usuario
     createdAt: String
     updatedAt: String
   }

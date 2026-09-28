@@ -297,3 +297,274 @@
     flex-wrap: wrap;
   }
 }
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0 24px;
+}
+
+.filter-btn {
+  border: 1px solid #dfe7ea;
+  background: white;
+  color: #334155;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn.active {
+  background: #0f4a5c;
+  color: white;
+  border-color: #0f4a5c;
+}
+
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agenda-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  background: #fff;
+  border: 1px solid #e4ebee;
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.agenda-pet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+}
+
+.pet-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #edf6f8;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.agenda-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #10252d;
+}
+
+.agenda-card small {
+  color: #64748b;
+}
+
+.agenda-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #475569;
+  min-width: 180px;
+}
+
+.agenda-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-badge.confirmado {
+  background: #dffaf2;
+  color: #0f766e;
+}
+
+.status-badge.pendente {
+  background: #fff4cf;
+  color: #92400e;
+}
+
+.status-badge.concluido {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.status-badge.agendado {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.workflow-panel {
+  margin: 20px 0 24px;
+  padding: 18px;
+  border: 1px solid #d7e6e8;
+  border-left: 4px solid #0f766e;
+  background: #f6faf9;
+}
+
+.workflow-heading,
+.workflow-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.workflow-heading h2 {
+  margin: 0;
+  color: #10252d;
+  font-size: 1.1rem;
+}
+
+.workflow-heading p,
+.workflow-empty {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+.workflow-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.workflow-item {
+  padding: 12px 14px;
+  border: 1px solid #dfe7ea;
+  background: white;
+}
+
+.workflow-item.urgent {
+  border-left: 4px solid #c2410c;
+  background: #fff8f3;
+}
+
+.workflow-copy {
+  display: grid;
+  gap: 4px;
+  color: #334155;
+}
+
+.workflow-copy strong {
+  color: #10252d;
+}
+
+.workflow-copy small,
+.workflow-state {
+  color: #64748b;
+}
+
+.workflow-item.urgent .workflow-state {
+  color: #9a3412;
+  font-weight: 700;
+}
+
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflow-actions button,
+.transfer-btn,
+.transfer-form button {
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #174c53;
+  padding: 8px 11px;
+  cursor: pointer;
+}
+
+.workflow-actions button:first-child {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: white;
+}
+
+.workflow-actions button:disabled,
+.transfer-form button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.workflow-message {
+  margin: 12px 0;
+  padding: 10px 12px;
+}
+
+.workflow-message.error {
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.workflow-message.success {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.transfer-form {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 12px;
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid #e4ebee;
+}
+
+.transfer-form label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.transfer-form select,
+.transfer-form textarea {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #0f172a;
+}
+
+.transfer-form textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.emergency-label {
+  color: #9a3412;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .agenda-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .agenda-meta {
+    align-items: flex-start;
+  }
+
+  .workflow-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

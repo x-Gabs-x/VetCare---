@@ -59,6 +59,8 @@ async function buscarAgendamentos() {
       populate: { path: 'tutor', select: camposUsuario },
     })
     .populate('veterinario', camposVeterinario)
+    .populate('veterinarioReserva', camposVeterinario)
+    .populate('concluidaPor', camposUsuario)
     .sort({ data: 1, horario: 1 });
 }
 
@@ -132,7 +134,9 @@ const resolvers = {
           select: camposPet,
           populate: { path: 'tutor', select: camposUsuario },
         })
-        .populate('veterinario', camposVeterinario);
+        .populate('veterinario', camposVeterinario)
+        .populate('veterinarioReserva', camposVeterinario)
+        .populate('concluidaPor', camposUsuario);
     },
 
     consultas: async (_, __, context) => {
@@ -185,6 +189,8 @@ const resolvers = {
   Agendamento: {
     id: (agendamento) => idDoDocumento(agendamento),
     data: (agendamento) => agendamento.data?.toISOString(),
+    tipoAgendamento: (agendamento) => agendamento.tipoAgendamento || 'comum',
+    concluidaEm: (agendamento) => agendamento.concluidaEm?.toISOString(),
     createdAt: (agendamento) => agendamento.createdAt?.toISOString(),
     updatedAt: (agendamento) => agendamento.updatedAt?.toISOString(),
   },
