@@ -1,0 +1,179 @@
+.vacinas-data {
+  margin: 4px 0 0;
+  color: #475569;
+}
+
+.vacinas-data::first-letter {
+  text-transform: uppercase;
+}
+
+/* cards de resumo */
+.vacinas-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.vacinas-card-resumo {
+  background: #f7fafa;
+  border: 1px solid #d6e2e4;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.vacinas-card-resumo span {
+  display: block;
+  font-size: 14px;
+  color: #4a6670;
+}
+
+.vacinas-card-resumo strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 32px;
+  color: #0f4a5c;
+}
+
+.vacinas-card-resumo.alerta strong {
+  color: #b3261e;
+}
+
+/* blocos */
+.vacinas-bloco {
+  border-top: 1px solid #e4ebee;
+  padding-top: 20px;
+  margin-top: 24px;
+}
+
+.vacinas-bloco h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: #0f4a5c;
+}
+
+/* formulario de busca */
+.vacinas-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.vacinas-form select {
+  flex: 1;
+  max-width: 320px;
+  padding: 8px 12px;
+  border: 1px solid #c3d3d6;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.vacinas-form button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #0f4a5c;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.vacinas-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* tabela */
+.vacinas-tabela-wrapper {
+  overflow-x: auto;
+}
+
+.vacinas-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.vacinas-tabela th {
+  text-align: left;
+  padding: 10px 12px;
+  background: #edf2f3;
+  color: #0f4a5c;
+  font-weight: 600;
+}
+
+.vacinas-tabela td {
+  padding: 12px;
+  border-bottom: 1px solid #e3ebec;
+  vertical-align: middle;
+}
+
+.vacinas-tabela td small {
+  display: block;
+  color: #6b8289;
+  font-size: 12px;
+}
+
+.vacinas-pet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vacinas-pet small {
+  display: block;
+  color: #6b8289;
+  font-size: 12px;
+}
+
+.vacinas-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1ec7c8;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* tags de status */
+.vacinas-status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-ok {
+  background: #d8f5e3;
+  color: #1b6b3a;
+}
+
+.status-alerta {
+  background: #fff1c2;
+  color: #8a5a00;
+}
+
+.status-atrasado {
+  background: #fbdada;
+  color: #b3261e;
+}
+
+.status-neutro {
+  background: #edf2f3;
+  color: #4a6670;
+}
+
+/* mensagens */
+.vacinas-erro {
+  color: #b3261e;
+}
+
+.vacinas-vazio {
+  color: #6b8289;
+}
