@@ -1,5 +1,7 @@
+const mongoose = require('mongoose');
 const Vacina = require('../models/Vacina');
 const Pet = require('../models/Pet');
+const Usuario = require('../models/Usuario');
 const asyncHandler = require('../utils/asyncHandler');
 
 const PERFIS_VISAO_GERAL = ['veterinario', 'recepcionista', 'administrador'];
@@ -42,7 +44,7 @@ function usuarioPodeAcessarPet(usuario, pet) {
 }
 
 const registrarVacina = asyncHandler(async (req, res) => {
-  const { pet, tipo, dataAplicacao, dataPrevistaReforco, observacoes } = req.body;
+  const { pet, veterinario, tipo, dataAplicacao, dataPrevistaReforco, observacoes } = req.body;
 
   if (!temVisaoGeral(req.usuario)) {
     return res.status(403).json({
@@ -51,6 +53,21 @@ const registrarVacina = asyncHandler(async (req, res) => {
   }
 
   const petEncontrado = await buscarPetOuFalhar(pet);
+  const veterinarioId = veterinario || (req.usuario.perfil === 'veterinario' ? req.usuario.id : null);
+
+  if (!veterinarioId || !mongoose.Types.ObjectId.isValid(veterinarioId)) {
+    return res.status(400).json({ erro: 'Selecione um veterinario valido.' });
+  }
+
+  const veterinarioEncontrado = await Usuario.findOne({
+    _id: veterinarioId,
+    perfil: 'veterinario',
+    ativo: true,
+  });
+
+  if (!veterinarioEncontrado) {
+    return res.status(404).json({ erro: 'Veterinario nao encontrado ou inativo.' });
+  }
 
   const vacina = await Vacina.create({
     tipo,
@@ -58,7 +75,7 @@ const registrarVacina = asyncHandler(async (req, res) => {
     dataPrevistaReforco,
     observacoes,
     pet: petEncontrado.id,
-    veterinario: req.usuario.id,
+    veterinario: veterinarioEncontrado.id,
   });
 
   await vacina.populate('pet', 'nome especie raca');

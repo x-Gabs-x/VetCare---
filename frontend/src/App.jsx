@@ -94,6 +94,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
       })
     : petsBase;
   const usuarios = usuariosData?.usuarios ?? [];
+  const veterinarios = usuarios.filter((usuario) => usuario.perfil === 'veterinario' && usuario.ativo);
   const consultas = consultasData?.consultas ?? fallbackConsultas;
   const consultasPet = consultasPetData?.consultasPorPet ?? [];
   const vacinasPet = vacinasPetData?.vacinasPorPet ?? [];
@@ -172,7 +173,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     setConsultaForm((prev) => ({
       ...prev,
       petId: pet.id,
-      veterinario: prev.veterinario || usuarioAtual?.nome || '',
+      veterinario: prev.veterinario || (usuarioAtual?.perfil === 'veterinario' ? usuarioAtual.id : ''),
     }));
     setPetForm({
       nome: pet.nome || '',
@@ -302,7 +303,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   };
 
   const salvarConsulta = async () => {
-    if (!consultaForm.petId || !consultaForm.motivoConsulta || !consultaForm.data || !usuarioAtual?.id) {
+    if (!consultaForm.petId || !consultaForm.veterinario || !consultaForm.motivoConsulta || !consultaForm.data || !usuarioAtual?.id) {
       return;
     }
 
@@ -321,7 +322,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
         },
         body: JSON.stringify({
           pet: consultaForm.petId,
-          veterinario: usuarioAtual.id,
+          veterinario: consultaForm.veterinario,
           motivoConsulta: consultaForm.motivoConsulta,
           procedimentos: consultaForm.procedimentos
             ? consultaForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean)
@@ -343,10 +344,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
         motivoConsulta: result.consulta?.motivoConsulta || consultaForm.motivoConsulta,
         procedimentos: result.consulta?.procedimentos || (consultaForm.procedimentos ? consultaForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean) : ['Consulta registrada']),
         observacoes: result.consulta?.observacoes || consultaForm.observacoes || 'Sem observações adicionais.',
-        veterinario: {
-          nome: usuarioAtual?.nome || 'Veterinário',
-          perfil: usuarioAtual?.perfil || 'veterinario',
-        },
+        veterinario: veterinarios.find((veterinario) => veterinario.id === consultaForm.veterinario) || { nome: 'Veterinário' },
         pet: { nome: petRegistrado?.nome || 'Pet' },
       };
 
@@ -358,7 +356,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   };
 
   const salvarProntuario = async () => {
-    if (!prontuarioForm.petId || !prontuarioForm.data || !usuarioAtual?.id) {
+    if (!prontuarioForm.petId || !prontuarioForm.veterinario || !prontuarioForm.data || !usuarioAtual?.id) {
       return;
     }
 
@@ -383,6 +381,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           },
           body: JSON.stringify({
             pet: prontuarioForm.petId,
+            veterinario: prontuarioForm.veterinario,
             tipo: prontuarioForm.tipoVacina,
             dataAplicacao: prontuarioForm.data,
             dataPrevistaReforco: prontuarioForm.reforco || null,
@@ -402,7 +401,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           dataAplicacao: result.dataAplicacao || prontuarioForm.data,
           dataPrevistaReforco: result.dataPrevistaReforco || prontuarioForm.reforco || null,
           observacoes: result.observacoes || prontuarioForm.observacoes || 'Vacina registrada no prontuário.',
-          veterinario: { nome: usuarioAtual?.nome || 'Veterinário' },
+          veterinario: veterinarios.find((veterinario) => veterinario.id === prontuarioForm.veterinario) || { nome: 'Veterinário' },
           pet: { nome: petSelecionadoNoRegistro?.nome || 'Pet' },
         };
 
@@ -420,7 +419,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           },
           body: JSON.stringify({
             pet: prontuarioForm.petId,
-            veterinario: usuarioAtual.id,
+            veterinario: prontuarioForm.veterinario,
             motivoConsulta: prontuarioForm.motivo,
             procedimentos: prontuarioForm.procedimentos
               ? prontuarioForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean)
@@ -441,7 +440,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           motivoConsulta: result.consulta?.motivoConsulta || prontuarioForm.motivo,
           procedimentos: result.consulta?.procedimentos || (prontuarioForm.procedimentos ? prontuarioForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean) : ['Atendimento registrado']),
           observacoes: result.consulta?.observacoes || prontuarioForm.observacoes || 'Consulta registrada no prontuário.',
-          veterinario: { nome: usuarioAtual?.nome || 'Veterinário' },
+          veterinario: veterinarios.find((veterinario) => veterinario.id === prontuarioForm.veterinario) || { nome: 'Veterinário' },
           pet: { nome: petSelecionadoNoRegistro?.nome || 'Pet' },
         };
 
@@ -1079,13 +1078,13 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                       </label>
                       <label>
                         <span>Veterinário</span>
-                        <input
-                          type="text"
-                          name="veterinario"
-                          value={consultaForm.veterinario}
-                          onChange={handleConsultaFieldChange}
-                          placeholder="Nome do veterinário"
-                        />
+                        <select name="veterinario" value={consultaForm.veterinario} onChange={handleConsultaFieldChange}>
+                          <option value="">Selecione o veterinário</option>
+                          {veterinarios.length === 0 && <option value="" disabled>Nenhum veterinário cadastrado</option>}
+                          {veterinarios.map((veterinario) => (
+                            <option key={veterinario.id} value={veterinario.id}>{veterinario.nome}</option>
+                          ))}
+                        </select>
                       </label>
                       <label>
                         <span>Data da consulta</span>
@@ -1177,7 +1176,13 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                       </label>
                       <label>
                         <span>Veterinário</span>
-                        <input type="text" name="veterinario" value={prontuarioForm.veterinario} onChange={handleProntuarioFieldChange} placeholder="Nome do veterinário" />
+                        <select name="veterinario" value={prontuarioForm.veterinario} onChange={handleProntuarioFieldChange}>
+                          <option value="">Selecione o veterinário</option>
+                          {veterinarios.length === 0 && <option value="" disabled>Nenhum veterinário cadastrado</option>}
+                          {veterinarios.map((veterinario) => (
+                            <option key={veterinario.id} value={veterinario.id}>{veterinario.nome}</option>
+                          ))}
+                        </select>
                       </label>
                       <label>
                         <span>Data</span>
