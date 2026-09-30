@@ -10,7 +10,6 @@ const { verificarToken, autorizar } = require('../middlewares/auth');
 
 const router = express.Router();
 
-// Somente administradores e veterinarios podem acessar os agendamentos.
 router.use(verificarToken, autorizar('administrador', 'veterinario'));
 
 router.post('/', criarAgendamento);

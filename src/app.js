@@ -6,6 +6,7 @@ const usuarioRoutes = require('./routes/usuarioRoutes');
 const petRoutes = require('./routes/petRoutes');
 const agendamentoRoutes = require('./routes/agendamentoRoutes');
 const consultaRoutes = require('./routes/consultaRoutes');
+const prontuarioRoutes = require('./routes/prontuarioRoutes');
 const vacinaRoutes = require('./routes/vacinaRoutes');
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -23,6 +24,7 @@ app.use('/usuarios', usuarioRoutes);
 app.use('/pets', petRoutes);
 app.use('/agendamentos', agendamentoRoutes);
 app.use('/consultas', consultaRoutes);
+app.use('/prontuarios', prontuarioRoutes);
 app.use('/vacinas', vacinaRoutes);
 
 function registrarMiddlewaresFinais() {

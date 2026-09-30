@@ -32,6 +32,7 @@ const petSchema = new mongoose.Schema(
       required: [true, 'O tutor do pet e obrigatorio'],
       index: true,
     },
+    ativo: { type: Boolean, default: true },
   },
   {
     timestamps: true,

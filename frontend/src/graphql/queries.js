@@ -102,6 +102,15 @@ export const GET_CONSULTAS_POR_PET = gql`
   }
 `;
 
+export const GET_PRONTUARIOS = gql`
+  query GetProntuarios {
+    prontuarios {
+      id
+      dataAtendimento
+    }
+  }
+`;
+
 export const GET_VACINAS_POR_PET = gql`
   query GetVacinasPorPet($petId: ID!) {
     vacinasPorPet(petId: $petId) {

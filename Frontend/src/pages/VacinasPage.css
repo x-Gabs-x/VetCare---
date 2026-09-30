@@ -7,7 +7,6 @@
   text-transform: uppercase;
 }
 
-/* cards de resumo */
 .vacinas-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -39,7 +38,6 @@
   color: #b3261e;
 }
 
-/* blocos */
 .vacinas-bloco {
   border-top: 1px solid #e4ebee;
   padding-top: 20px;
@@ -52,7 +50,6 @@
   color: #0f4a5c;
 }
 
-/* formulario de busca */
 .vacinas-form {
   display: flex;
   gap: 8px;
@@ -83,7 +80,6 @@
   cursor: default;
 }
 
-/* tabela */
 .vacinas-tabela-wrapper {
   overflow-x: auto;
 }
@@ -139,7 +135,6 @@
   font-weight: 700;
 }
 
-/* tags de status */
 .vacinas-status {
   display: inline-block;
   padding: 4px 10px;
@@ -169,7 +164,6 @@
   color: #4a6670;
 }
 
-/* mensagens */
 .vacinas-erro {
   color: #b3261e;
 }

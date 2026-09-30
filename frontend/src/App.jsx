@@ -1,15 +1,16 @@
 import { useQuery } from '@apollo/client/react';
 import { useState } from 'react';
 import './App.css';
+import PetsProntuariosPage from './pages/PetsProntuariosPage';
 import {
   GET_CONSULTAS,
   GET_CONSULTAS_POR_PET,
   GET_PET,
   GET_PETS,
+  GET_PRONTUARIOS,
   GET_USUARIOS,
   GET_VACINAS_POR_PET,
 } from './graphql/queries';
-import { fallbackConsultas, fallbackPets } from './data/fallbackData';
 
 const initialLogin = {
   email: '',
@@ -67,9 +68,10 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const [abaAtiva, setAbaAtiva] = useState('dashboard');
 
   const { data: petsData, loading: petsLoading, error: petsError, refetch: refetchPets } = useQuery(GET_PETS);
-  const { data: usuariosData, loading: usuariosLoading, error: usuariosError, refetch: refetchUsuarios } = useQuery(GET_USUARIOS);
-  const { data: consultasData, loading: consultasLoading, error: consultasError } = useQuery(GET_CONSULTAS);
-  const { data: petDetalheData, loading: petDetalheLoading, error: petDetalheError } = useQuery(GET_PET, {
+  const { data: usuariosData, loading: usuariosLoading, error: usuariosError, refetch: refetchUsuarios } = useQuery(GET_USUARIOS, { skip: isTutorView });
+  const { data: consultasData, loading: consultasLoading, error: consultasError } = useQuery(GET_CONSULTAS, { skip: isTutorView });
+  const { data: prontuariosData, refetch: refetchProntuarios } = useQuery(GET_PRONTUARIOS);
+  const { data: petDetalheData, loading: petDetalheLoading, error: petDetalheError, refetch: refetchPetDetalhe } = useQuery(GET_PET, {
     variables: { id: petSelecionadoId || '' },
     skip: !petSelecionadoId,
     fetchPolicy: 'cache-and-network',
@@ -79,14 +81,14 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     skip: !petSelecionadoId || !isTutorView,
     fetchPolicy: 'cache-and-network',
   });
-  const { data: vacinasPetData, loading: vacinasPetLoading, error: vacinasPetError } = useQuery(GET_VACINAS_POR_PET, {
+  const { data: vacinasPetData } = useQuery(GET_VACINAS_POR_PET, {
     variables: { petId: petSelecionadoId || '' },
     skip: !petSelecionadoId || !isTutorView,
     fetchPolicy: 'cache-and-network',
   });
 
   const usuarioAtual = JSON.parse(localStorage.getItem('vetcare_usuario') || sessionStorage.getItem('vetcare_usuario') || '{}');
-  const petsBase = petsData?.pets ?? (isTutorView ? [] : fallbackPets);
+  const petsBase = petsData?.pets ?? [];
   const pets = isTutorView
     ? petsBase.filter((pet) => {
         const tutorId = pet.tutor?.id || pet.tutor;
@@ -95,7 +97,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     : petsBase;
   const usuarios = usuariosData?.usuarios ?? [];
   const veterinarios = usuarios.filter((usuario) => usuario.perfil === 'veterinario' && usuario.ativo);
-  const consultas = consultasData?.consultas ?? fallbackConsultas;
+  const consultas = consultasData?.consultas ?? [];
   const consultasPet = consultasPetData?.consultasPorPet ?? [];
   const vacinasPet = vacinasPetData?.vacinasPorPet ?? [];
   const petSelecionado = petDetalheData?.pet || pets.find((pet) => pet.id === petSelecionadoId) || pets[0] || null;
@@ -103,8 +105,12 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     ? consultasPet
     : consultas.filter((consulta) => {
         if (!petSelecionado) return true;
-        return consulta.pet?.nome === petSelecionado.nome;
+        return consulta.pet?.id === petSelecionado.id;
       });
+  const registrosClinicos = prontuariosData?.prontuarios || [];
+  const ultimaData = [...registrosClinicos.map((registro) => registro.dataAtendimento), ...prontuarios.map((consulta) => consulta.createdAt)]
+    .filter(Boolean)
+    .sort((a, b) => new Date(b) - new Date(a))[0];
   const historicoProntuarios = [...prontuarioManual, ...prontuarios];
   const vacinasAtuais = [...vacinasAdicionadas, ...vacinasPet];
 
@@ -160,14 +166,15 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const navegarParaSecao = (secao) => {
     setAtalhoAtivo(secao);
     setAbaAtiva(secao);
-    const elemento = document.getElementById(secao);
-
-    if (elemento) {
-      elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const abrirPet = (pet) => {
+    if (!pet) {
+      setPetSelecionadoId(null);
+      setPetEditando(false);
+      return;
+    }
     setPetSelecionadoId(pet.id);
     setPetEditando(false);
     setConsultaForm((prev) => ({
@@ -275,30 +282,6 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
       await refetchPets();
     } catch (error) {
       setPetFormStatus(error.message || 'Não foi possível cadastrar o pet.');
-    }
-  };
-
-  const desativarPet = async (petId) => {
-    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
-
-    if (!token) return;
-
-    try {
-      const response = await fetch(`http://localhost:3000/pets/${petId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.erro || 'Não foi possível remover o pet.');
-      }
-
-      window.location.reload();
-    } catch (error) {
-      console.error(error);
     }
   };
 
@@ -543,7 +526,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           {!isTutorView && (
             <div className="panel-header">
               <h3>Pets</h3>
-              <button type="button" className="panel-action" onClick={() => setMostrarFormPet((prev) => !prev)}>{mostrarFormPet ? 'Fechar' : '+ Novo'}</button>
+              <button type="button" className="panel-action" onClick={() => navegarParaSecao('pets')}>+ Novo</button>
             </div>
           )}
 
@@ -631,7 +614,23 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
         </aside>
 
         <section className="dashboard-content">
-          {(abaAtiva === 'dashboard' || abaAtiva === 'pets') && (
+          {(abaAtiva === 'pets' || abaAtiva === 'prontuarios') && (
+            <PetsProntuariosPage
+              secao={abaAtiva}
+              usuario={usuarioAtual}
+              pets={pets}
+              petsLoading={petsLoading}
+              petsError={petsError}
+              usuarios={usuarios}
+              petSelecionadoId={petSelecionadoId}
+              onSelectPet={abrirPet}
+              onNavigate={navegarParaSecao}
+              refetchPets={refetchPets}
+              refetchPetDetalhe={refetchPetDetalhe}
+              refetchProntuarios={refetchProntuarios}
+            />
+          )}
+          {abaAtiva === 'dashboard' && (
             <div id="dashboard" className="summary-grid">
               <div className="summary-card summary-primary">
                 <span>Pets ativos</span>
@@ -639,11 +638,11 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
               </div>
               <div className="summary-card">
                 <span>Prontuários</span>
-                <strong>{prontuarios.length}</strong>
+                <strong>{registrosClinicos.length}</strong>
               </div>
               <div className="summary-card">
                 <span>Última consulta</span>
-                <strong>{prontuarios[0] ? 'Hoje' : 'Sem registro'}</strong>
+                <strong>{ultimaData ? new Date(ultimaData).toLocaleDateString('pt-BR') : 'Sem registro'}</strong>
               </div>
             </div>
           )}
@@ -678,17 +677,17 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
             </div>
           )}
 
-          {(abaAtiva === 'dashboard' || abaAtiva === 'pets') && (
+          {abaAtiva === 'dashboard' && (
             <div className="patient-header">
               <div>
                 <small>Paciente selecionado</small>
                 <h2>{petSelecionado ? petSelecionado.nome : 'Nenhum pet encontrado'}</h2>
               </div>
-              <button type="button" className="primary-button small-button">Abrir prontuário</button>
+              <button type="button" className="primary-button small-button" disabled={!petSelecionado} onClick={() => navegarParaSecao('prontuarios')}>Abrir prontuário</button>
             </div>
           )}
 
-          {(abaAtiva === 'dashboard' || abaAtiva === 'pets') && (
+          {abaAtiva === 'dashboard' && (
             <div className="pet-detail-panel">
             {petDetalheLoading ? (
               <p className="empty-state">Carregando dados do pet...</p>
@@ -786,7 +785,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                     <button
                       type="button"
                       className="primary-button small-button"
-                      onClick={() => setMostrarFormPet((prev) => !prev)}
+                      onClick={() => navegarParaSecao('pets')}
                     >
                       {mostrarFormPet ? 'Fechar cadastro' : 'Cadastrar pet'}
                     </button>
@@ -847,8 +846,8 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                 {!isTutorView && <button type="button" className="panel-action">+ Marcar</button>}
               </div>
 
-              {prontuarios.length > 0 ? prontuarios.map((consulta) => (
-                <article key={consulta.id || Math.random()} className="record-card">
+              {prontuarios.length > 0 ? prontuarios.map((consulta, index) => (
+                <article key={consulta.id || index} className="record-card">
                   <div className="record-topline">
                     <span className="record-tag">Consulta</span>
                     <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
@@ -883,8 +882,8 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                 {!isTutorView && <button type="button" className="panel-action">+ Agendar</button>}
               </div>
 
-              {prontuarios.length > 0 ? prontuarios.map((consulta) => (
-                <article key={consulta.id || Math.random()} className="record-card">
+              {prontuarios.length > 0 ? prontuarios.map((consulta, index) => (
+                <article key={consulta.id || index} className="record-card">
                   <div className="record-topline">
                     <span className="record-tag">Agendamento</span>
                     <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Sem data'}</time>
@@ -1048,7 +1047,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
             </div>
           )}
 
-          {(abaAtiva === 'dashboard' || abaAtiva === 'prontuarios') && (
+          {abaAtiva === 'dashboard' && (
             <div id="prontuarios" className="record-panel">
               <div className="panel-header">
                 <h3>Prontuários</h3>
