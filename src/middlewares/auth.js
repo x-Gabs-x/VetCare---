@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const Usuario = require('../models/Usuario');
 
-function verificarToken(req, res, next) {
+async function verificarToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -17,9 +18,29 @@ function verificarToken(req, res, next) {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.usuario = payload;
+
+    // O perfil no token pode estar desatualizado se um administrador alterou
+    // a conta depois do login. Use o cadastro atual como fonte de permissões.
+    const usuarioAtual = await Usuario.findById(payload.id)
+      .select('nome email perfil ativo')
+      .lean();
+
+    if (!usuarioAtual || !usuarioAtual.ativo) {
+      return res.status(401).json({ erro: 'Usuario inexistente ou inativo.' });
+    }
+
+    req.usuario = {
+      ...payload,
+      id: usuarioAtual._id.toString(),
+      nome: usuarioAtual.nome,
+      email: usuarioAtual.email,
+      perfil: usuarioAtual.perfil,
+    };
     next();
   } catch (erro) {
+    if (erro.name !== 'JsonWebTokenError' && erro.name !== 'TokenExpiredError' && erro.name !== 'NotBeforeError') {
+      return next(erro);
+    }
     return res.status(401).json({ erro: 'Token invalido ou expirado.' });
   }
 }
@@ -30,7 +51,10 @@ function autorizar(...perfisPermitidos) {
       return res.status(401).json({ erro: 'Usuario nao autenticado.' });
     }
 
-    if (!perfisPermitidos.includes(req.usuario.perfil)) {
+    const perfilUsuario = String(req.usuario.perfil || '').trim().toLowerCase();
+    const perfisNormalizados = perfisPermitidos.map((perfil) => String(perfil).trim().toLowerCase());
+
+    if (!perfisNormalizados.includes(perfilUsuario)) {
       return res.status(403).json({
         erro: 'Acesso negado. Voce nao tem permissao para acessar este recurso.',
       });

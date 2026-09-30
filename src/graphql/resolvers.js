@@ -22,11 +22,23 @@ async function buscarPetOuFalhar(petId) {
   return pet;
 }
 
+function idDeReferencia(valor) {
+  if (!valor) return '';
+  if (typeof valor === 'string') return valor;
+  if (typeof valor === 'object') {
+    if (valor._id) return valor._id.toString();
+    if (valor.id) return valor.id.toString();
+    return valor.toString();
+  }
+  return String(valor);
+}
+
 function usuarioPodeAcessarPet(usuario, pet) {
   if (!usuario) return false;
   if (temVisaoGeral(usuario)) return true;
   if (usuario.perfil === 'tutor') {
-    return String(pet.tutor) === String(usuario.id);
+    const tutorId = idDeReferencia(pet?.tutor);
+    return tutorId && String(tutorId) === String(usuario.id);
   }
   return false;
 }
@@ -73,7 +85,7 @@ async function buscarConsultas() {
     .sort({ createdAt: -1 });
 }
 
-async function buscarVacinas(filtro = {}) {
+async function buscarVacinas(filtro = {}, ordem = { dataAplicacao: -1 }) {
   return Vacina.find(filtro)
     .populate({
       path: 'pet',
@@ -81,7 +93,7 @@ async function buscarVacinas(filtro = {}) {
       populate: { path: 'tutor', select: camposUsuario },
     })
     .populate('veterinario', camposVeterinario)
-    .sort({ dataAplicacao: -1 });
+    .sort(ordem);
 }
 
 const resolvers = {
@@ -168,13 +180,16 @@ const resolvers = {
     lembretesVacinas: async (_, { dias = 30 }, context) => {
       exigirVisaoGeral(context.usuario);
 
-      const hoje = new Date();
-      const dataLimite = new Date();
-      dataLimite.setDate(hoje.getDate() + Number(dias));
+      // mesma correcao do vacinaController: comparar em UTC, senao as vacinas de hoje somem
+      const agora = new Date();
+      const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
+      const dataLimite = new Date(hoje);
+      dataLimite.setUTCDate(hoje.getUTCDate() + Number(dias));
 
-      return buscarVacinas({
-        dataPrevistaReforco: { $gte: hoje, $lte: dataLimite },
-      });
+      return buscarVacinas(
+        { dataPrevistaReforco: { $gte: hoje, $lte: dataLimite } },
+        { dataPrevistaReforco: 1 }
+      );
     },
   },
 
@@ -212,4 +227,4 @@ const resolvers = {
 
 };
 
-module.exports = resolvers; 
+module.exports = resolvers;
