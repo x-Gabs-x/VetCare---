@@ -58,10 +58,13 @@ query DadosVetCare {
 | Usuários | `GET /usuarios`, `GET /usuarios/:id` | Administrador ou veterinário |
 | Usuários | `PUT /usuarios/:id` | Próprio usuário ou administrador |
 | Usuários | `DELETE /usuarios/:id` | Administrador |
-| Pets | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/pets` | Administrador ou veterinário |
+| Pets | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/pets` | Tutor cadastra e edita os próprios pets; equipe consulta; administrador arquiva |
+| Prontuários | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/prontuarios` | Tutor lê os registros dos próprios pets; veterinário e administrador registram e editam; administrador arquiva |
 | Consultas | `POST /consultas`, `GET /consultas`, `GET /consultas/:petId`, `PUT /consultas/:id` | Administrador ou veterinário |
 | Agendamentos | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/agendamentos` | Administrador ou veterinário |
 | Vacinas | `POST /vacinas`, `GET /vacinas/:petId`, `GET /vacinas/lembretes/proximos` | Autenticado; gravação e lembretes exigem administrador, veterinário ou recepcionista |
+
+`GET /prontuarios?petId=<id>` retorna o histórico clínico de um pet. O cadastro recebe `pet`, `dataAtendimento`, `motivo` e, opcionalmente, `anamnese`, `diagnostico`, `tratamento`, `observacoes` e `retornoEm`. O profissional responsável é definido pelo token. A exclusão de pets e prontuários faz arquivamento lógico para preservar o histórico.
 
 Os filtros de usuários `perfil` e `nome` podem ser combinados em `GET /usuarios`.
 

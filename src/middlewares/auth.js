@@ -19,8 +19,6 @@ async function verificarToken(req, res, next) {
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
-    // O perfil no token pode estar desatualizado se um administrador alterou
-    // a conta depois do login. Use o cadastro atual como fonte de permissões.
     const usuarioAtual = await Usuario.findById(payload.id)
       .select('nome email perfil ativo')
       .lean();

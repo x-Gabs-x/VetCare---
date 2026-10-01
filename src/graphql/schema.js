@@ -1,4 +1,4 @@
-const typeDefs = `#graphql
+const typeDefs = `
   type Usuario {
     id: ID!
     nome: String!
@@ -45,6 +45,21 @@ const typeDefs = `#graphql
     updatedAt: String
   }
 
+  type Prontuario {
+    id: ID!
+    pet: Pet!
+    veterinario: Usuario!
+    dataAtendimento: String!
+    motivo: String!
+    anamnese: String
+    diagnostico: String
+    tratamento: String
+    observacoes: String
+    retornoEm: String
+    createdAt: String
+    updatedAt: String
+  }
+
   type Vacina {
     id: ID!
     tipo: String!
@@ -67,6 +82,8 @@ const typeDefs = `#graphql
     agendamento(id: ID!): Agendamento
     consultas: [Consulta!]!
     consultasPorPet(petId: ID!): [Consulta!]!
+    prontuarios(petId: ID): [Prontuario!]!
+    prontuario(id: ID!): Prontuario
     vacinas: [Vacina!]!
     vacinasPorPet(petId: ID!): [Vacina!]!
     lembretesVacinas(dias: Int): [Vacina!]!

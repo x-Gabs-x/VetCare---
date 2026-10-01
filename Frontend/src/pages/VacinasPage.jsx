@@ -42,7 +42,6 @@ const HISTORICO_QUERY = `
   }
 `
 
-// timeZone UTC pra nao mostrar um dia a menos (mesmo problema do backend)
 function formatarData(valor) {
   if (!valor) return '-'
   return new Date(valor).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
@@ -121,7 +120,6 @@ function VacinasPage() {
     }
   }
 
-  // numeros dos cards, calculados em cima dos lembretes que ja vieram
   const vencendoNaSemana = lembretes.filter((v) => diasAteReforco(v.dataPrevistaReforco) <= 7).length
   const petsComReforco = new Set(lembretes.map((v) => v.pet?.id)).size
 

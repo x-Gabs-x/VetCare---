@@ -1,5 +1,6 @@
 const Agendamento = require('../models/Agendamento');
 const Consulta = require('../models/Consulta');
+const Prontuario = require('../models/Prontuario');
 const Vacina = require('../models/Vacina');
 const Pet = require('../models/Pet');
 const Usuario = require('../models/Usuario');
@@ -117,8 +118,8 @@ const resolvers = {
 
     pets: async (_, __, context) => {
       const filtro = temVisaoGeral(context.usuario)
-        ? {}
-        : { tutor: context.usuario.id };
+        ? { ativo: { $ne: false } }
+        : { tutor: context.usuario.id, ativo: { $ne: false } };
 
       return Pet.find(filtro)
         .populate('tutor', camposUsuario)
@@ -126,7 +127,7 @@ const resolvers = {
     },
 
     pet: async (_, { id }, context) => {
-      const pet = await Pet.findById(id).populate('tutor', camposUsuario);
+      const pet = await Pet.findOne({ _id: id, ativo: { $ne: false } }).populate('tutor', camposUsuario);
       if (pet) exigirAcessoAoPet(context.usuario, pet);
       return pet;
     },
@@ -165,6 +166,30 @@ const resolvers = {
         .sort({ createdAt: -1 });
     },
 
+    prontuarios: async (_, { petId }, context) => {
+      const filtro = { arquivadoEm: null };
+      if (petId) {
+        const pet = await buscarPetOuFalhar(petId);
+        exigirAcessoAoPet(context.usuario, pet);
+        filtro.pet = petId;
+      } else if (!temVisaoGeral(context.usuario)) {
+        const pets = await Pet.find({ tutor: context.usuario.id }).select('_id');
+        filtro.pet = { $in: pets.map((pet) => pet._id) };
+      }
+      return Prontuario.find(filtro)
+        .populate({ path: 'pet', select: camposPet, populate: { path: 'tutor', select: camposUsuario } })
+        .populate('veterinario', camposVeterinario)
+        .sort({ dataAtendimento: -1, createdAt: -1 });
+    },
+
+    prontuario: async (_, { id }, context) => {
+      const prontuario = await Prontuario.findOne({ _id: id, arquivadoEm: null })
+        .populate({ path: 'pet', select: camposPet, populate: { path: 'tutor', select: camposUsuario } })
+        .populate('veterinario', camposVeterinario);
+      if (prontuario) exigirAcessoAoPet(context.usuario, prontuario.pet);
+      return prontuario;
+    },
+
     vacinas: async (_, __, context) => {
       if (temVisaoGeral(context.usuario)) return buscarVacinas();
       const pets = await Pet.find({ tutor: context.usuario.id }).select('_id');
@@ -180,7 +205,6 @@ const resolvers = {
     lembretesVacinas: async (_, { dias = 30 }, context) => {
       exigirVisaoGeral(context.usuario);
 
-      // mesma correcao do vacinaController: comparar em UTC, senao as vacinas de hoje somem
       const agora = new Date();
       const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
       const dataLimite = new Date(hoje);
@@ -208,6 +232,14 @@ const resolvers = {
     id: (consulta) => idDoDocumento(consulta),
     createdAt: (consulta) => consulta.createdAt?.toISOString(),
     updatedAt: (consulta) => consulta.updatedAt?.toISOString(),
+  },
+
+  Prontuario: {
+    id: (prontuario) => idDoDocumento(prontuario),
+    dataAtendimento: (prontuario) => prontuario.dataAtendimento?.toISOString(),
+    retornoEm: (prontuario) => prontuario.retornoEm?.toISOString() || null,
+    createdAt: (prontuario) => prontuario.createdAt?.toISOString(),
+    updatedAt: (prontuario) => prontuario.updatedAt?.toISOString(),
   },
 
   Vacina: {

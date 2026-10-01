@@ -1,4 +1,5 @@
 const Pet = require('../models/Pet');
+const mongoose = require('mongoose');
 const Usuario = require('../models/Usuario');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -7,6 +8,12 @@ const CAMPOS_EDITAVEIS = ['nome', 'especie', 'raca', 'idade', 'peso'];
 async function validarTutor(tutorId) {
   if (!tutorId) {
     const erro = new Error('Informe o tutor vinculado ao pet.');
+    erro.status = 400;
+    throw erro;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(tutorId)) {
+    const erro = new Error('Identificador do tutor invalido.');
     erro.status = 400;
     throw erro;
   }
@@ -21,6 +28,12 @@ async function validarTutor(tutorId) {
 
   if (!tutor.ativo) {
     const erro = new Error('Nao e possivel vincular o pet a um usuario inativo.');
+    erro.status = 400;
+    throw erro;
+  }
+
+  if (tutor.perfil !== 'tutor') {
+    const erro = new Error('O responsavel pelo pet deve ter perfil de tutor.');
     erro.status = 400;
     throw erro;
   }
@@ -81,7 +94,6 @@ function usuarioPodeAcessarPet(usuario, pet) {
 }
 
 const cadastrarPet = asyncHandler(async (req, res) => {
-  // Tutores sempre criam pets para si mesmos; o cliente não escolhe o vínculo.
   if (!req.usuario) {
     const erro = new Error('Usuario nao autenticado.');
     erro.status = 401;
@@ -90,10 +102,16 @@ const cadastrarPet = asyncHandler(async (req, res) => {
   const tutorIdInformado = req.body.tutor || req.body.tutorId;
   const tutorIdFinal = req.usuario?.perfil === 'tutor'
     ? req.usuario.id
-    : (tutorIdInformado || req.usuario.id);
+    : tutorIdInformado;
 
   if (!req.body.nome || !req.body.especie || req.body.idade === undefined || req.body.peso === undefined) {
     const erro = new Error('Informe nome, especie, idade e peso do pet.');
+    erro.status = 400;
+    throw erro;
+  }
+
+  if (req.body.idade === '' || req.body.peso === '' || !Number.isInteger(Number(req.body.idade)) || Number(req.body.idade) < 0 || !Number.isFinite(Number(req.body.peso)) || Number(req.body.peso) < 0) {
+    const erro = new Error('Idade deve ser um numero inteiro e peso deve ser um numero nao negativo.');
     erro.status = 400;
     throw erro;
   }
@@ -105,8 +123,8 @@ const cadastrarPet = asyncHandler(async (req, res) => {
     nome: req.body.nome,
     especie: req.body.especie,
     raca: req.body.raca,
-    idade: req.body.idade,
-    peso: req.body.peso,
+    idade: Number(req.body.idade),
+    peso: Number(req.body.peso),
     tutor: tutorIdFinal,
   });
 
@@ -116,7 +134,7 @@ const cadastrarPet = asyncHandler(async (req, res) => {
 });
 
 const listarPets = asyncHandler(async (req, res) => {
-  const filtro = temVisaoGeral(req.usuario) ? {} : { tutor: req.usuario.id };
+  const filtro = temVisaoGeral(req.usuario) ? { ativo: { $ne: false } } : { tutor: req.usuario.id, ativo: { $ne: false } };
 
   const pets = await Pet.find(filtro)
     .populate('tutor', 'nome email telefone perfil')
@@ -127,7 +145,7 @@ const listarPets = asyncHandler(async (req, res) => {
 
 
 const buscarPetPorId = asyncHandler(async (req, res) => {
-  const pet = await Pet.findById(req.params.id).populate(
+  const pet = await Pet.findOne({ _id: req.params.id, ativo: { $ne: false } }).populate(
     'tutor',
     'nome email telefone perfil'
   );
@@ -145,7 +163,7 @@ const buscarPetPorId = asyncHandler(async (req, res) => {
 
 
 const atualizarPet = asyncHandler(async (req, res) => {
-  const pet = await Pet.findById(req.params.id);
+  const pet = await Pet.findOne({ _id: req.params.id, ativo: { $ne: false } });
 
   if (!pet) {
     return res.status(404).json({ erro: 'Pet nao encontrado.' });
@@ -155,12 +173,19 @@ const atualizarPet = asyncHandler(async (req, res) => {
     return res.status(403).json({ erro: 'Voce nao tem permissao para alterar este pet.' });
   }
 
+  if (req.body.tutor && req.usuario.perfil === 'tutor') {
+    return res.status(403).json({ erro: 'O tutor do pet nao pode ser alterado por esta conta.' });
+  }
+
   if (req.body.tutor) {
     await validarTutor(req.body.tutor);
     pet.tutor = req.body.tutor;
   }
 
   aplicarCamposEditaveis(pet, req.body);
+  if (req.body.idade === '' || req.body.peso === '' || !Number.isInteger(Number(pet.idade)) || Number(pet.idade) < 0 || !Number.isFinite(Number(pet.peso)) || Number(pet.peso) < 0) {
+    return res.status(400).json({ erro: 'Idade deve ser um numero inteiro e peso deve ser um numero nao negativo.' });
+  }
   await pet.save();
   await pet.populate('tutor', 'nome email telefone perfil');
 
@@ -169,15 +194,16 @@ const atualizarPet = asyncHandler(async (req, res) => {
 
 
 const removerPet = asyncHandler(async (req, res) => {
-  const pet = await Pet.findById(req.params.id);
+  const pet = await Pet.findOne({ _id: req.params.id, ativo: { $ne: false } });
 
   if (!pet) {
     return res.status(404).json({ erro: 'Pet nao encontrado.' });
   }
 
-  await pet.deleteOne();
+  pet.ativo = false;
+  await pet.save();
 
-  return res.status(200).json({ mensagem: 'Pet removido com sucesso.' });
+  return res.status(200).json({ mensagem: 'Pet arquivado com sucesso.' });
 });
 
 module.exports = {

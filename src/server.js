@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const { app, registrarMiddlewaresFinais } = require('./app');
 const conectarBanco = require('./config/db');
+const Usuario = require('./models/Usuario');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express4');
 const typeDefs = require('./graphql/schema');
@@ -20,32 +21,26 @@ async function iniciar() {
 
   await apolloServer.start();
 
-app.use(
-  '/graphql',
-  expressMiddleware(apolloServer, {
-    context: async ({ req }) => {
-      const authHeader = req.headers.authorization;
+  app.use(
+    '/graphql',
+    expressMiddleware(apolloServer, {
+      context: async ({ req }) => {
+        const [tipo, token] = (req.headers.authorization || '').split(' ');
+        if (tipo !== 'Bearer' || !token) throw new Error('Token nao informado ou invalido.');
 
-      if (!authHeader) {
-        throw new Error('Token nao informado.');
-      }
+        let payload;
+        try {
+          payload = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (erro) {
+          throw new Error('Token invalido ou expirado.');
+        }
 
-      const [tipo, token] = authHeader.split(' ');
-
-      if (tipo !== 'Bearer' || !token) {
-        throw new Error('Formato de token invalido.');
-      }
-
-      try {
-        const usuario = jwt.verify(token, process.env.JWT_SECRET);
-
-        return { usuario };
-      } catch (erro) {
-        throw new Error('Token invalido ou expirado.');
-      }
-    },
-  })
-);
+        const usuario = await Usuario.findById(payload.id).select('nome email perfil ativo').lean();
+        if (!usuario || !usuario.ativo) throw new Error('Usuario inexistente ou inativo.');
+        return { usuario: { id: usuario._id.toString(), nome: usuario.nome, email: usuario.email, perfil: usuario.perfil } };
+      },
+    })
+  );
 
   registrarMiddlewaresFinais();
 
