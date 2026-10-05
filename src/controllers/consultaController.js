@@ -1,0 +1,182 @@
+const mongoose = require('mongoose');
+
+const Consulta = require('../models/Consulta');
+const Pet = require('../models/Pet');
+const Usuario = require('../models/Usuario');
+
+const asyncHandler = require('../utils/asyncHandler');
+
+function podeRegistrarConsulta(usuario) {
+  return Boolean(usuario && ['veterinario', 'administrador'].includes(usuario.perfil));
+}
+
+const criarConsulta = asyncHandler(async (req, res) => {
+  const {
+    pet,
+    veterinario,
+    motivoConsulta,
+    procedimentos,
+    observacoes,
+  } = req.body;
+
+  if (!podeRegistrarConsulta(req.usuario)) {
+    return res.status(403).json({
+      erro: 'Acesso negado. Apenas veterinario ou administrador podem registrar prontuarios.',
+    });
+  }
+
+  if (!pet || !motivoConsulta || !motivoConsulta.trim()) {
+    return res.status(400).json({
+      erro: 'Pet e motivo da consulta sao obrigatorios.',
+    });
+  }
+
+  const veterinarioId = veterinario || req.usuario.id;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(pet) ||
+    !mongoose.Types.ObjectId.isValid(veterinarioId)
+  ) {
+    return res.status(400).json({
+      erro: 'ID do pet ou do veterinario invalido.',
+    });
+  }
+
+  if (
+    procedimentos !== undefined &&
+    !Array.isArray(procedimentos)
+  ) {
+    return res.status(400).json({
+      erro: 'Procedimentos deve ser uma lista.',
+    });
+  }
+
+  const petEncontrado = await Pet.findById(pet);
+
+  if (!petEncontrado) {
+    return res.status(404).json({
+      erro: 'Pet nao encontrado.',
+    });
+  }
+
+  const veterinarioEncontrado = await Usuario.findById(veterinarioId);
+
+  if (!veterinarioEncontrado) {
+    return res.status(404).json({
+      erro: 'Veterinario nao encontrado.',
+    });
+  }
+
+  if (!['veterinario', 'administrador'].includes(veterinarioEncontrado.perfil)) {
+    return res.status(403).json({
+      erro: 'O usuario informado nao possui perfil de veterinario ou administrador.',
+    });
+  }
+
+  if (!veterinarioEncontrado.ativo) {
+    return res.status(403).json({
+      erro: 'O veterinario informado esta inativo.',
+    });
+  }
+
+  const consulta = await Consulta.create({
+    pet,
+    veterinario: veterinarioId,
+    motivoConsulta,
+    procedimentos,
+    observacoes,
+  });
+
+  await consulta.populate([
+    {
+      path: 'pet',
+      select: 'nome especie raca tutor',
+    },
+    {
+      path: 'veterinario',
+      select: 'nome email perfil',
+    },
+  ]);
+
+  return res.status(201).json({
+    mensagem: 'Consulta registrada com sucesso.',
+    consulta,
+  });
+});
+
+const listarTodasConsultas = asyncHandler(async (req, res) => {
+  const consultas = await Consulta.find({})
+    .populate('pet', 'nome especie raca tutor')
+    .populate('veterinario', 'nome email perfil')
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json(consultas);
+});
+
+const atualizarConsulta = asyncHandler(async (req, res) => {
+  const { motivoConsulta, procedimentos, observacoes } = req.body;
+
+  if (motivoConsulta !== undefined && (!motivoConsulta || !motivoConsulta.trim())) {
+    return res.status(400).json({
+      erro: 'O motivo da consulta nao pode ficar vazio.',
+    });
+  }
+
+  if (procedimentos !== undefined && !Array.isArray(procedimentos)) {
+    return res.status(400).json({
+      erro: 'Procedimentos deve ser uma lista.',
+    });
+  }
+
+  const consulta = await Consulta.findById(req.params.id);
+
+  if (!consulta) {
+    return res.status(404).json({ erro: 'Consulta nao encontrada.' });
+  }
+
+  if (motivoConsulta !== undefined) consulta.motivoConsulta = motivoConsulta.trim();
+  if (procedimentos !== undefined) consulta.procedimentos = procedimentos;
+  if (observacoes !== undefined) consulta.observacoes = observacoes;
+
+  await consulta.save();
+  await consulta.populate([
+    { path: 'pet', select: 'nome especie raca idade peso tutor' },
+    { path: 'veterinario', select: 'nome email perfil' },
+  ]);
+
+  return res.status(200).json(consulta);
+});
+
+const listarConsultasPorPet = asyncHandler(async (req, res) => {
+  const { petId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(petId)) {
+    return res.status(400).json({
+      erro: 'ID do pet invalido.',
+    });
+  }
+
+  const pet = await Pet.findById(petId);
+
+  if (!pet) {
+    return res.status(404).json({
+      erro: 'Pet nao encontrado.',
+    });
+  }
+
+  const consultas = await Consulta.find({
+    pet: petId,
+  })
+    .populate('veterinario', 'nome email perfil')
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json(consultas);
+});
+
+module.exports = {
+  criarConsulta,
+  listarTodasConsultas,
+  atualizarConsulta,
+  listarConsultasPorPet,
+  podeRegistrarConsulta,
+};

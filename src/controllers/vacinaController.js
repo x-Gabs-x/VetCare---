@@ -1,0 +1,143 @@
+const mongoose = require('mongoose');
+const Vacina = require('../models/Vacina');
+const Pet = require('../models/Pet');
+const Usuario = require('../models/Usuario');
+const asyncHandler = require('../utils/asyncHandler');
+
+const PERFIS_VISAO_GERAL = ['veterinario', 'recepcionista', 'administrador'];
+
+function temVisaoGeral(usuario) {
+  return usuario && PERFIS_VISAO_GERAL.includes(usuario.perfil);
+}
+
+async function buscarPetOuFalhar(petId) {
+  const pet = await Pet.findById(petId);
+
+  if (!pet) {
+    const erro = new Error('Pet nao encontrado.');
+    erro.status = 404;
+    throw erro;
+  }
+
+  return pet;
+}
+
+function idDeReferencia(valor) {
+  if (!valor) return '';
+  if (typeof valor === 'string') return valor;
+  if (typeof valor === 'object') {
+    if (valor._id) return valor._id.toString();
+    if (valor.id) return valor.id.toString();
+    return valor.toString();
+  }
+  return String(valor);
+}
+
+function usuarioPodeAcessarPet(usuario, pet) {
+  if (!usuario) return false;
+  if (temVisaoGeral(usuario)) return true;
+  if (usuario.perfil === 'tutor') {
+    const tutorId = idDeReferencia(pet?.tutor);
+    return Boolean(tutorId) && String(tutorId) === String(usuario.id);
+  }
+  return false;
+}
+
+const registrarVacina = asyncHandler(async (req, res) => {
+  const { pet, veterinario, tipo, dataAplicacao, dataPrevistaReforco, observacoes } = req.body;
+
+  if (!temVisaoGeral(req.usuario)) {
+    return res.status(403).json({
+      erro: 'Acesso negado. Apenas veterinario, recepcionista ou administrador podem registrar vacinas.',
+    });
+  }
+
+  const petEncontrado = await buscarPetOuFalhar(pet);
+  const veterinarioId = veterinario || (req.usuario.perfil === 'veterinario' ? req.usuario.id : null);
+
+  if (!veterinarioId || !mongoose.Types.ObjectId.isValid(veterinarioId)) {
+    return res.status(400).json({ erro: 'Selecione um veterinario valido.' });
+  }
+
+  const veterinarioEncontrado = await Usuario.findOne({
+    _id: veterinarioId,
+    perfil: 'veterinario',
+    ativo: true,
+  });
+
+  if (!veterinarioEncontrado) {
+    return res.status(404).json({ erro: 'Veterinario nao encontrado ou inativo.' });
+  }
+
+  const vacina = await Vacina.create({
+    tipo,
+    dataAplicacao,
+    dataPrevistaReforco,
+    observacoes,
+    pet: petEncontrado.id,
+    veterinario: veterinarioEncontrado.id,
+  });
+
+  await vacina.populate('pet', 'nome especie raca');
+  await vacina.populate('veterinario', 'nome');
+
+  return res.status(201).json(vacina);
+});
+
+const listarVacinasPorPet = asyncHandler(async (req, res) => {
+  const pet = await buscarPetOuFalhar(req.params.petId);
+
+  if (!usuarioPodeAcessarPet(req.usuario, pet)) {
+    return res.status(403).json({
+      erro: 'Voce nao tem permissao para visualizar as vacinas deste pet.',
+    });
+  }
+
+  const vacinas = await Vacina.find({ pet: pet.id })
+    .populate('veterinario', 'nome')
+    .sort({ dataAplicacao: -1 });
+
+  return res.status(200).json(vacinas);
+});
+
+const listarLembretes = asyncHandler(async (req, res) => {
+  if (!temVisaoGeral(req.usuario)) {
+    return res.status(403).json({
+      erro: 'Acesso negado. Apenas veterinario, recepcionista ou administrador podem ver os lembretes.',
+    });
+  }
+
+  const dias = Number(req.query.dias) || 30;
+  const agora = new Date();
+  const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
+  const dataLimite = new Date(hoje);
+  dataLimite.setUTCDate(hoje.getUTCDate() + dias);
+
+  const lembretes = await Vacina.find({
+    dataPrevistaReforco: { $gte: hoje, $lte: dataLimite },
+  })
+    .populate('pet', 'nome especie raca tutor')
+    .populate('veterinario', 'nome')
+    .sort({ dataPrevistaReforco: 1 });
+
+  return res.status(200).json(lembretes);
+});
+
+const removerVacina = asyncHandler(async (req, res) => {
+  const vacina = await Vacina.findById(req.params.id);
+
+  if (!vacina) {
+    return res.status(404).json({ erro: 'Vacina nao encontrada.' });
+  }
+
+  await vacina.deleteOne();
+
+  return res.status(200).json({ mensagem: 'Vacina removida com sucesso.' });
+});
+
+module.exports = {
+  registrarVacina,
+  listarVacinasPorPet,
+  listarLembretes,
+  removerVacina,
+};

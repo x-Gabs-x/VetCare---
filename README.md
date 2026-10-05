@@ -5,25 +5,11 @@
 Requisitos: Node.js, npm e uma instância MongoDB disponível.
 
 ```bash
-cd backend
 npm install
 npm start
 ```
 
-O arquivo `.env` deve ficar dentro da pasta `backend`. Ele não deve ser enviado ao Git.
-
-## Execução do frontend
-
-Quando as telas forem criadas na pasta `frontend`, elas poderão ser abertas diretamente no navegador. Para uma melhor experiência durante o desenvolvimento, instale a extensão **Live Server** no VS Code, abra a pasta do projeto e clique com o botão direito no arquivo HTML desejado.
-
-Selecione **Open with Live Server**. A tela será aberta em um endereço semelhante a `http://127.0.0.1:5500/frontend/login.html`.
-
-O backend deve continuar sendo executado separadamente em outro terminal:
-
-```powershell
-cd backend
-npm start
-```
+Primeiro. crie um arquivo `.env` na raiz do projeto e implemente o enviado na atividade;
 
 ## Rotas disponíveis
 
@@ -72,10 +58,13 @@ query DadosVetCare {
 | Usuários | `GET /usuarios`, `GET /usuarios/:id` | Administrador ou veterinário |
 | Usuários | `PUT /usuarios/:id` | Próprio usuário ou administrador |
 | Usuários | `DELETE /usuarios/:id` | Administrador |
-| Pets | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/pets` | Administrador ou veterinário |
+| Pets | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/pets` | Tutor cadastra e edita os próprios pets; equipe consulta; administrador arquiva |
+| Prontuários | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/prontuarios` | Tutor lê os registros dos próprios pets; veterinário e administrador registram e editam; administrador arquiva |
 | Consultas | `POST /consultas`, `GET /consultas`, `GET /consultas/:petId`, `PUT /consultas/:id` | Administrador ou veterinário |
 | Agendamentos | `POST`, `GET`, `GET/:id`, `PUT/:id`, `DELETE/:id` em `/agendamentos` | Administrador ou veterinário |
 | Vacinas | `POST /vacinas`, `GET /vacinas/:petId`, `GET /vacinas/lembretes/proximos` | Autenticado; gravação e lembretes exigem administrador, veterinário ou recepcionista |
+
+`GET /prontuarios?petId=<id>` retorna o histórico clínico de um pet. O cadastro recebe `pet`, `dataAtendimento`, `motivo` e, opcionalmente, `anamnese`, `diagnostico`, `tratamento`, `observacoes` e `retornoEm`. O profissional responsável é definido pelo token. A exclusão de pets e prontuários faz arquivamento lógico para preservar o histórico.
 
 Os filtros de usuários `perfil` e `nome` podem ser combinados em `GET /usuarios`.
 

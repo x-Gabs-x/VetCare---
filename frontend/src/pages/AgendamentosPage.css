@@ -1,0 +1,458 @@
+.page-shell {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #dfeaf0;
+  border-radius: 12px;
+}
+
+.page-header,
+.workflow-heading,
+.workflow-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #153746;
+  font-size: 1.8rem;
+}
+
+.page-header button,
+.workflow-actions button,
+.transfer-btn,
+.transfer-form button,
+.booking-form button,
+.block-row button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #cbdde4;
+  border-radius: 6px;
+  background: #fff;
+  color: #174c53;
+  cursor: pointer;
+}
+
+.page-header .primary-btn,
+.workflow-actions button:first-child,
+.booking-form > button {
+  border-color: #0f7180;
+  background: #0f7180;
+  color: #fff;
+}
+
+.page-badge {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e8f4f3;
+  color: #0f625f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.workflow-panel,
+.booking-panel {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #d8e5e9;
+  border-left: 4px solid #0f7180;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.workflow-heading h2,
+.booking-panel h2,
+.block-management h3 {
+  margin: 0;
+  color: #153746;
+  font-size: 1.15rem;
+}
+
+.workflow-heading p,
+.booking-panel > p,
+.workflow-empty {
+  margin: 5px 0 0;
+  color: #617985;
+}
+
+.workflow-list,
+.block-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.workflow-item,
+.block-row {
+  padding: 11px 12px;
+  border: 1px solid #dfe8eb;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.workflow-item.urgent {
+  border-left: 4px solid #bf4b24;
+  background: #fff8f5;
+}
+
+.workflow-copy {
+  display: grid;
+  gap: 4px;
+  color: #526a75;
+}
+
+.workflow-copy strong {
+  color: #183c4a;
+}
+
+.workflow-copy small,
+.workflow-state {
+  color: #637b85;
+}
+
+.workflow-item.urgent .workflow-state,
+.emergency-label {
+  color: #a53e20;
+  font-weight: 700;
+}
+
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflow-actions button:disabled,
+.booking-form button:disabled,
+.block-row button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.workflow-message {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+
+.workflow-message.error {
+  background: #fff0ee;
+  color: #9b2f25;
+}
+
+.workflow-message.success {
+  background: #eaf7f1;
+  color: #166148;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.filter-btn {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid #d3e0e5;
+  border-radius: 6px;
+  background: #fff;
+  color: #425d68;
+  cursor: pointer;
+}
+
+.filter-btn.active {
+  border-color: #0f7180;
+  background: #0f7180;
+  color: white;
+}
+
+.agenda-list {
+  display: grid;
+  gap: 10px;
+}
+
+.agenda-card {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(95px, 0.8fr) minmax(140px, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #dfe8eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.agenda-pet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 190px;
+}
+
+.agenda-pet h3 {
+  margin: 0 0 4px;
+  color: #173b49;
+  font-size: 1rem;
+}
+
+.agenda-pet small,
+.agenda-meta small {
+  display: block;
+  color: #627b86;
+}
+
+.pet-avatar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: #edf5f6;
+}
+
+.agenda-info,
+.agenda-meta {
+  display: grid;
+  gap: 5px;
+  color: #4c6570;
+}
+
+.agenda-meta {
+  justify-items: end;
+}
+
+.status-badge {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #e8f0f8;
+  color: #285c8b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-badge.confirmado {
+  background: #e4f5ed;
+  color: #18704d;
+}
+
+.status-badge.concluido {
+  background: #edf0f2;
+  color: #52616a;
+}
+
+.transfer-form,
+.booking-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid #e2eaed;
+}
+
+.transfer-form label,
+.booking-form label {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  color: #344f5a;
+  font-size: 0.9rem;
+}
+
+.transfer-form select,
+.transfer-form textarea,
+.booking-form input,
+.booking-form select,
+.booking-form textarea {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #cbdde4;
+  border-radius: 5px;
+  background: #fff;
+  color: #173b49;
+  font: inherit;
+}
+
+.transfer-form textarea,
+.booking-form textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.booking-form .booking-wide {
+  grid-column: 1 / -1;
+}
+
+.block-management {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #dce7ea;
+}
+
+.block-config-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.block-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  color: #4c6570;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 38, 48, 0.48);
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  max-height: min(90vh, 760px);
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid #d8e5e9;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(15, 38, 48, 0.22);
+}
+
+.modal-header,
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #153746;
+  font-size: 1.3rem;
+}
+
+.close-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d3e0e5;
+  border-radius: 6px;
+  background: #fff;
+  color: #425d68;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.modal-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.modal-form label {
+  display: grid;
+  gap: 6px;
+  color: #344f5a;
+  font-size: 0.9rem;
+}
+
+.modal-form input,
+.modal-form select,
+.modal-form textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cbdde4;
+  border-radius: 5px;
+  background: #fff;
+  color: #173b49;
+  font: inherit;
+}
+
+.modal-form textarea {
+  resize: vertical;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-actions {
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.modal-actions button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #cbdde4;
+  border-radius: 6px;
+  background: #fff;
+  color: #174c53;
+  cursor: pointer;
+}
+
+.modal-actions .primary-btn {
+  border-color: #0f7180;
+  background: #0f7180;
+  color: #fff;
+}
+
+.modal-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@media (max-width: 700px) {
+  .page-shell {
+    padding: 14px;
+  }
+
+  .page-header,
+  .workflow-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .agenda-meta {
+    justify-items: start;
+  }
+
+  .transfer-form,
+  .booking-form,
+  .block-config-row,
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-card {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-meta {
+    justify-items: start;
+  }
+
+  .modal-card {
+    padding: 16px;
+  }
+}
