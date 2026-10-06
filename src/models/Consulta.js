@@ -24,7 +24,7 @@ const consultaSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ['agendada', 'concluida'],
+            enum: ['agendada', 'concluida', 'cancelada'],
             default: 'agendada',
         },
 

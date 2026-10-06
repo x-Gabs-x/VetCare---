@@ -1,0 +1,232 @@
+.consultas-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.consultas-header p {
+  color: #62809a;
+  margin: 6px 0 0;
+}
+
+.consultas-message,
+.consultas-vazio {
+  border: 1px solid #b7dce7;
+  border-radius: 10px;
+  background: #e9f7fa;
+  color: #184c5d;
+  padding: 12px 14px;
+  margin: 0;
+}
+
+.consultas-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consultas-filtros button {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid #d3e0e5;
+  border-radius: 6px;
+  background: #fff;
+  color: #456076;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.consultas-filtros button.ativo {
+  border-color: #0c6d94;
+  background: #e4f6fb;
+  color: #0b6985;
+}
+
+.consultas-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.consultas-card {
+  border: 1px solid #dfeaf0;
+  border-radius: 14px;
+  background: #fff;
+  padding: 18px;
+}
+
+.consultas-card-header,
+.consultas-paciente,
+.consultas-acoes {
+  display: flex;
+  align-items: center;
+}
+
+.consultas-card-header {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.consultas-paciente {
+  gap: 12px;
+}
+
+.consultas-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #1ec7c8;
+  color: #fff;
+  font-weight: 800;
+}
+
+.consultas-paciente h2 {
+  color: #18354a;
+  font-size: 1.2rem;
+  margin: 0 0 4px;
+}
+
+.consultas-paciente p {
+  color: #62809a;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.consultas-status {
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.consultas-status.agendada {
+  background: #e4f6fb;
+  color: #0b6985;
+}
+
+.consultas-status.cancelada {
+  background: #fbdada;
+  color: #a83d42;
+}
+
+.consultas-status.concluida {
+  background: #d8f5e3;
+  color: #1b6b3a;
+}
+
+.consultas-status.neutro {
+  background: #edf2f3;
+  color: #4a6670;
+}
+
+.consultas-detalhes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 1px solid #e6eef2;
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.consultas-detalhes p {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.consultas-detalhes span,
+.consultas-procedimentos > span {
+  color: #6c8aa0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.consultas-detalhes strong {
+  color: #29485e;
+}
+
+.consultas-procedimentos {
+  border-top: 1px solid #e6eef2;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.consultas-procedimentos ul {
+  color: #415f75;
+  line-height: 1.7;
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.consultas-acoes {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid #e6eef2;
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.consultas-acoes .secondary-button {
+  margin-left: 0;
+}
+
+.consultas-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #edf2f5;
+  padding-top: 14px;
+  color: #41607a;
+  font-size: 0.82rem;
+}
+
+.consultas-pagination button {
+  border: 1px solid #dfeaf0;
+  border-radius: 8px;
+  background: #fff;
+  color: #35566d;
+  padding: 9px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.consultas-pagination button:hover:not(:disabled) {
+  border-color: #b9d9e5;
+  background: #f5fbff;
+}
+
+.consultas-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .consultas-header,
+  .consultas-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .consultas-detalhes {
+    grid-template-columns: 1fr;
+  }
+
+  .consultas-lista {
+    grid-template-columns: 1fr;
+  }
+
+  .consultas-acoes {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

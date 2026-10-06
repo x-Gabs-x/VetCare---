@@ -114,7 +114,8 @@ const listarTodasConsultas = asyncHandler(async (req, res) => {
 });
 
 const atualizarConsulta = asyncHandler(async (req, res) => {
-  const { motivoConsulta, procedimentos, observacoes } = req.body;
+  const { motivoConsulta, procedimentos, observacoes, status } = req.body;
+  const statusValidos = ['agendada', 'concluida', 'cancelada'];
 
   if (motivoConsulta !== undefined && (!motivoConsulta || !motivoConsulta.trim())) {
     return res.status(400).json({
@@ -128,6 +129,12 @@ const atualizarConsulta = asyncHandler(async (req, res) => {
     });
   }
 
+  if (status !== undefined && !statusValidos.includes(status)) {
+    return res.status(400).json({
+      erro: `Status invalido. Use um dos seguintes: ${statusValidos.join(', ')}.`,
+    });
+  }
+
   const consulta = await Consulta.findById(req.params.id);
 
   if (!consulta) {
@@ -137,6 +144,7 @@ const atualizarConsulta = asyncHandler(async (req, res) => {
   if (motivoConsulta !== undefined) consulta.motivoConsulta = motivoConsulta.trim();
   if (procedimentos !== undefined) consulta.procedimentos = procedimentos;
   if (observacoes !== undefined) consulta.observacoes = observacoes;
+  if (status !== undefined) consulta.status = status;
 
   await consulta.save();
   await consulta.populate([

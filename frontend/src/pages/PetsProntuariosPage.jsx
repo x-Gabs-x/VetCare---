@@ -41,6 +41,7 @@ function campoTexto(label, name, form, setForm, options = {}) {
 
 export default function PetsProntuariosPage({ secao, usuario, pets, petsLoading, petsError, usuarios, petSelecionadoId, onSelectPet, onNavigate, refetchPets, refetchPetDetalhe, refetchProntuarios }) {
   const [busca, setBusca] = useState('');
+  const [paginaPets, setPaginaPets] = useState(1);
   const [modoPet, setModoPet] = useState(null);
   const [petForm, setPetForm] = useState(petVazio);
   const [modoProntuario, setModoProntuario] = useState(null);
@@ -61,6 +62,9 @@ export default function PetsProntuariosPage({ secao, usuario, pets, petsLoading,
   const carregandoProntuarios = Boolean(petId) && !dadosAtuais;
   const erroProntuarios = dadosAtuais ? resultadoProntuarios.erro : '';
   const petsFiltrados = pets.filter((pet) => `${pet.nome} ${pet.especie} ${pet.raca || ''} ${pet.tutor?.nome || ''}`.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')));
+  const totalPaginasPets = Math.max(1, Math.ceil(petsFiltrados.length / 5));
+  const paginaPetsAtual = Math.min(paginaPets, totalPaginasPets);
+  const petsDaPagina = petsFiltrados.slice((paginaPetsAtual - 1) * 5, paginaPetsAtual * 5);
 
   const { data: consultasData, loading: consultasLoading, error: consultasError } = useQuery(GET_CONSULTAS_POR_PET, {
     variables: { petId },
@@ -256,17 +260,26 @@ export default function PetsProntuariosPage({ secao, usuario, pets, petsLoading,
           </div>
           <label className="workspace-search">
             <span>Buscar por nome, espécie, raça ou tutor</span>
-            <input type="search" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Buscar pet" />
+            <input type="search" value={busca} onChange={(event) => { setBusca(event.target.value); setPaginaPets(1); }} placeholder="Buscar pet" />
           </label>
           {petsLoading ? <p className="empty-state">Carregando pets...</p> : petsError ? <p className="empty-state">Não foi possível carregar os pets.</p> : petsFiltrados.length ? (
-            <div className="workspace-pet-list">
-              {petsFiltrados.map((pet) => (
-                <button type="button" key={pet.id} className={`workspace-pet-item ${petSelecionado?.id === pet.id ? 'selected' : ''}`} onClick={() => onSelectPet(pet)}>
-                  <span className="pet-avatar">{pet.nome.charAt(0).toUpperCase()}</span>
-                  <span><strong>{pet.nome}</strong><small>{pet.especie}{pet.raca ? ` · ${pet.raca}` : ''} · Tutor: {pet.tutor?.nome || 'Não informado'}</small></span>
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="workspace-pet-list">
+                {petsDaPagina.map((pet) => (
+                  <button type="button" key={pet.id} className={`workspace-pet-item ${petSelecionado?.id === pet.id ? 'selected' : ''}`} onClick={() => onSelectPet(pet)}>
+                    <span className="pet-avatar">{pet.nome.charAt(0).toUpperCase()}</span>
+                    <span><strong>{pet.nome}</strong><small>{pet.especie}{pet.raca ? ` · ${pet.raca}` : ''} · Tutor: {pet.tutor?.nome || 'Não informado'}</small></span>
+                  </button>
+                ))}
+              </div>
+              {totalPaginasPets > 1 && (
+                <div className="workspace-pagination">
+                  <button type="button" disabled={paginaPetsAtual === 1} onClick={() => setPaginaPets((pagina) => pagina - 1)}>Anterior</button>
+                  <span>{paginaPetsAtual}/{totalPaginasPets}</span>
+                  <button type="button" disabled={paginaPetsAtual === totalPaginasPets} onClick={() => setPaginaPets((pagina) => pagina + 1)}>Próxima</button>
+                </div>
+              )}
+            </>
           ) : <p className="empty-state">{busca ? 'Nenhum pet corresponde à busca.' : 'Nenhum pet cadastrado. Use “Novo pet” para começar.'}</p>}
 
           {petSelecionado && (

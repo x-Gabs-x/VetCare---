@@ -1020,6 +1020,12 @@
   font-weight: 700;
 }
 
+.record-pet-name {
+  color: #0b6985;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
 .record-card h4 {
   margin: 14px 0 12px;
   color: #1e3347;

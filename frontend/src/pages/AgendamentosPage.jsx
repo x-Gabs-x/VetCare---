@@ -64,6 +64,7 @@ async function enviarApi(caminho, token, opcoes = {}) {
 
 export default function AgendamentosPage({ onConsultasAtualizadas, onAgendamentosAtualizados }) {
   const [filtro, setFiltro] = useState('todos')
+  const [paginaAgendamentos, setPaginaAgendamentos] = useState(1)
   const [agendamentos, setAgendamentos] = useState([])
   const [usuario] = useState(lerUsuarioSalvo)
   const [pendencias, setPendencias] = useState([])
@@ -186,8 +187,17 @@ export default function AgendamentosPage({ onConsultasAtualizadas, onAgendamento
 
   const listaFiltrada = useMemo(() => {
     if (filtro === 'todos') return agendamentos
+    if (filtro === 'pendentes') return agendamentos.filter((agendamento) => agendamento.status === 'agendado')
     return agendamentos.filter((agendamento) => agendamento.status === filtro)
   }, [agendamentos, filtro])
+  const totalPaginasAgendamentos = Math.max(1, Math.ceil(listaFiltrada.length / 8))
+  const paginaAgendamentosAtual = Math.min(paginaAgendamentos, totalPaginasAgendamentos)
+  const agendamentosDaPagina = listaFiltrada.slice((paginaAgendamentosAtual - 1) * 8, paginaAgendamentosAtual * 8)
+
+  function selecionarFiltro(novoFiltro) {
+    setFiltro(novoFiltro)
+    setPaginaAgendamentos(1)
+  }
 
   async function submeterNovoAgendamento(evento) {
     evento.preventDefault()
@@ -458,10 +468,14 @@ export default function AgendamentosPage({ onConsultasAtualizadas, onAgendamento
   }
 
   return (
-    <section className="page-shell">
-      <div className="page-header">
-        <h1>Agendamentos</h1>
-        <button type="button" className="primary-btn" onClick={abrirModalNovoAgendamento}>+ Novo agendamento</button>
+    <section className="workspace-page agendamentos-page">
+      <div className="workspace-heading agendamentos-header">
+        <div>
+          <span className="workspace-eyebrow">Agenda clínica</span>
+          <h1>Agendamentos</h1>
+          <p>Organize os próximos atendimentos dos pacientes.</p>
+        </div>
+        <button type="button" className="primary-button small-button" onClick={abrirModalNovoAgendamento}>+ Novo agendamento</button>
       </div>
 
       {modalNovoAgendamento && (
@@ -572,42 +586,46 @@ export default function AgendamentosPage({ onConsultasAtualizadas, onAgendamento
 
       {erro && !podeVerFila && <p className="workflow-message error" role="alert">{erro}</p>}
       <div className="filter-bar">
-        <button type="button" className={filtro === 'todos' ? 'filter-btn active' : 'filter-btn'} onClick={() => setFiltro('todos')}>Todos</button>
-        <button type="button" className={filtro === 'agendado' ? 'filter-btn active' : 'filter-btn'} onClick={() => setFiltro('agendado')}>Agendados</button>
-        <button type="button" className={filtro === 'confirmado' ? 'filter-btn active' : 'filter-btn'} onClick={() => setFiltro('confirmado')}>Confirmados</button>
-        <button type="button" className={filtro === 'concluido' ? 'filter-btn active' : 'filter-btn'} onClick={() => setFiltro('concluido')}>Concluídos</button>
+        <button type="button" className={filtro === 'todos' ? 'filter-btn active' : 'filter-btn'} onClick={() => selecionarFiltro('todos')}>Todos</button>
+        <button type="button" className={filtro === 'pendentes' ? 'filter-btn active' : 'filter-btn'} onClick={() => selecionarFiltro('pendentes')}>Pendentes</button>
+        <button type="button" className={filtro === 'confirmado' ? 'filter-btn active' : 'filter-btn'} onClick={() => selecionarFiltro('confirmado')}>Confirmados</button>
+        <button type="button" className={filtro === 'concluido' ? 'filter-btn active' : 'filter-btn'} onClick={() => selecionarFiltro('concluido')}>Concluídos</button>
       </div>
 
       <div className="agenda-list">
-        {listaFiltrada.map((agendamento) => (
+        {agendamentosDaPagina.map((agendamento) => (
           <article key={agendamento.id} className="agenda-card">
-            <div className="agenda-pet">
-              <div className="pet-avatar">🐾</div>
-              <div>
-                <h3>{agendamento.pet?.nome || 'Pet'}</h3>
-                <small>{agendamento.veterinario?.nome || 'Veterinário'}</small>
-                {agendamento.veterinarioReserva && <small>Reserva: {agendamento.veterinarioReserva.nome}</small>}
+            <div className="agenda-card-header">
+              <div className="agenda-pet">
+                <div className="pet-avatar">🐾</div>
+                <div>
+                  <h3>{agendamento.pet?.nome || 'Pet'}</h3>
+                  <small>Veterinário: <strong>{agendamento.veterinario?.nome || 'Não informado'}</strong></small>
+                  {agendamento.veterinarioReserva && <small>Reserva: {agendamento.veterinarioReserva.nome}</small>}
+                </div>
               </div>
+              <span className={`status-badge ${agendamento.status?.toLowerCase()}`}>{agendamento.status}</span>
             </div>
             <div className="agenda-info">
-              <span>{agendamento.pet?.especie || 'Espécie'}</span>
-              <span>{formatarData(agendamento.data)}</span>
-              <span>{agendamento.horario}</span>
+              <p><span>Espécie</span><strong>{agendamento.pet?.especie || 'Não informada'}</strong></p>
+              <p><span>Data</span><strong>{formatarData(agendamento.data)}</strong></p>
+              <p><span>Horário</span><strong>{agendamento.horario}</strong></p>
               {agendamento.tipoAgendamento === 'emergencia' && <strong className="emergency-label">Emergência: {agendamento.justificativaEmergencia}</strong>}
               {agendamento.tipoAgendamento === 'encaixe' && <strong className="emergency-label">Encaixe liberado pela recepção</strong>}
             </div>
             <div className="agenda-meta">
-              <span className={`status-badge ${agendamento.status?.toLowerCase()}`}>{agendamento.status}</span>
               <small>{agendamento.observacoes || 'Sem observações'}</small>
-              {['administrador', 'veterinario'].includes(usuario?.perfil) && agendamento.status === 'agendado' && (
-                <button type="button" className="transfer-btn" disabled={salvando} onClick={() => aceitarAgendamento(agendamento)}>Aceitar agendamento</button>
-              )}
-              {['administrador', 'veterinario'].includes(usuario?.perfil) && agendamento.status === 'confirmado' && (
-                <button type="button" className="transfer-btn" disabled={salvando} onClick={() => concluirAtendimento(agendamento.id)}>Concluir atendimento</button>
-              )}
-              {podeVerFila && !['cancelado', 'concluido'].includes(agendamento.status) && agendamento.tipoAgendamento !== 'emergencia' && (
-                <button type="button" className="transfer-btn" onClick={() => abrirFormulario(agendamento)}>Propor remanejamento</button>
-              )}
+              <div className="agenda-actions">
+                {['administrador', 'veterinario'].includes(usuario?.perfil) && agendamento.status === 'agendado' && (
+                  <button type="button" className="primary-button small-button" disabled={salvando} onClick={() => aceitarAgendamento(agendamento)}>Aprovar agendamento</button>
+                )}
+                {['administrador', 'veterinario'].includes(usuario?.perfil) && agendamento.status === 'confirmado' && (
+                  <button type="button" className="primary-button small-button" disabled={salvando} onClick={() => concluirAtendimento(agendamento.id)}>Concluir atendimento</button>
+                )}
+                {podeVerFila && !['cancelado', 'concluido'].includes(agendamento.status) && agendamento.tipoAgendamento !== 'emergencia' && (
+                  <button type="button" className="secondary-button" onClick={() => abrirFormulario(agendamento)}>Propor remanejamento</button>
+                )}
+              </div>
             </div>
             {formAberto === agendamento.id && (
               <form className="transfer-form" onSubmit={(evento) => enviarProposta(evento, agendamento.id)}>
@@ -642,6 +660,14 @@ export default function AgendamentosPage({ onConsultasAtualizadas, onAgendamento
           </article>
         ))}
       </div>
+
+      {totalPaginasAgendamentos > 1 && (
+        <div className="agenda-pagination">
+          <button type="button" disabled={paginaAgendamentosAtual === 1} onClick={() => setPaginaAgendamentos((pagina) => pagina - 1)}>Anterior</button>
+          <span>{paginaAgendamentosAtual}/{totalPaginasAgendamentos}</span>
+          <button type="button" disabled={paginaAgendamentosAtual === totalPaginasAgendamentos} onClick={() => setPaginaAgendamentos((pagina) => pagina + 1)}>Próxima</button>
+        </div>
+      )}
     </section>
   )
 }
