@@ -3,6 +3,7 @@ import { useState } from 'react';
 import './App.css';
 import PetsProntuariosPage from './pages/PetsProntuariosPage';
 import AgendamentosPage from './pages/AgendamentosPage';
+import ConsultasPage from './pages/ConsultasPage';
 import {
   GET_CONSULTAS,
   GET_CONSULTAS_POR_PET,
@@ -95,9 +96,9 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const petsBase = petsData?.pets ?? [];
   const pets = isTutorView
     ? petsBase.filter((pet) => {
-        const tutorId = pet.tutor?.id || pet.tutor;
-        return !usuarioAtual?.id || String(tutorId) === String(usuarioAtual.id);
-      })
+      const tutorId = pet.tutor?.id || pet.tutor;
+      return !usuarioAtual?.id || String(tutorId) === String(usuarioAtual.id);
+    })
     : petsBase;
   const usuarios = usuariosData?.usuarios ?? [];
   const veterinarios = usuarios.filter((usuario) => usuario.perfil === 'veterinario' && usuario.ativo);
@@ -119,9 +120,9 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const prontuarios = isTutorView
     ? consultasPet
     : consultas.filter((consulta) => {
-        if (!petSelecionado) return true;
-        return consulta.pet?.id === petSelecionado.id;
-      });
+      if (!petSelecionado) return true;
+      return consulta.pet?.id === petSelecionado.id;
+    });
   const consultasVisiveis = !isTutorView && abaAtiva === 'consultas' ? consultas : prontuarios;
   const registrosClinicos = prontuariosData?.prontuarios || [];
   const ultimaData = [...registrosClinicos.map((registro) => registro.dataAtendimento), ...prontuarios.map((consulta) => consulta.createdAt)]
@@ -179,10 +180,41 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     await atualizarUsuarioAdmin(usuarioId, { ativo });
   };
 
+  const atualizarStatusConsulta = async (consulta, status, mensagem) => {
+    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
+    if (!consulta.id || !token) return false;
+
+    setConsultaStatus('');
+    try {
+      const response = await fetch(`http://localhost:3000/consultas/${consulta.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.erro || 'Não foi possível atualizar a consulta.');
+      await refetchConsultas();
+      setConsultaStatus(mensagem);
+      return true;
+    } catch (error) {
+      setConsultaStatus(error.message);
+      return false;
+    }
+  };
+
   const concluirConsultaAgendada = async (consulta) => {
     const agendamentoId = consulta.agendamento?.id;
+    const agendamentoCancelado = consulta.agendamento?.status === 'cancelado';
     const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
-    if (!agendamentoId || !token) return;
+    if (!token || consulta.status === 'concluida') return;
+
+    if (!agendamentoId || agendamentoCancelado || consulta.status === 'cancelada') {
+      await atualizarStatusConsulta(consulta, 'concluida', 'Atendimento concluído.');
+      return;
+    }
 
     setConsultaStatus('');
     try {
@@ -192,11 +224,39 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.erro || 'Não foi possível concluir o atendimento.');
-      await refetchConsultas();
+      await Promise.all([refetchConsultas(), refetchAgendamentos()]);
       setConsultaStatus('Atendimento concluído.');
     } catch (error) {
       setConsultaStatus(error.message);
     }
+  };
+
+  const desmarcarConsultaAgendada = async (consulta) => {
+    const agendamentoId = consulta.agendamento?.id;
+    const agendamentoAtivo = agendamentoId && !['cancelado', 'concluido'].includes(consulta.agendamento?.status);
+    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
+    if (!token || consulta.status === 'concluida') return;
+
+    setConsultaStatus('');
+    try {
+      if (agendamentoAtivo) {
+        const response = await fetch(`http://localhost:3000/agendamentos/${agendamentoId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.erro || 'Não foi possível cancelar o agendamento.');
+      }
+
+      const atualizada = await atualizarStatusConsulta(consulta, 'cancelada', 'Consulta cancelada com sucesso.');
+      if (atualizada) await refetchAgendamentos();
+    } catch (error) {
+      setConsultaStatus(error.message);
+    }
+  };
+
+  const reabrirConsulta = async (consulta) => {
+    await atualizarStatusConsulta(consulta, 'agendada', 'Consulta reaberta com sucesso.');
   };
 
   const navegarParaSecao = (secao) => {
@@ -725,613 +785,588 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
 
           {abaAtiva === 'dashboard' && (
             <div className="pet-detail-panel">
-            {petDetalheLoading ? (
-              <p className="empty-state">Carregando dados do pet...</p>
-            ) : petDetalheError ? (
-              <p className="empty-state">Não foi possível carregar os dados do pet.</p>
-            ) : petSelecionado ? (
-              <>
-                <div className="pet-detail-header">
-                  <div className="pet-detail-avatar">{petSelecionado.nome?.charAt(0).toUpperCase() || 'P'}</div>
-                  <div>
-                    <h3>{petSelecionado.nome}</h3>
-                    <span>{petSelecionado.especie} · {petSelecionado.raca || 'Raça não informada'}</span>
+              {petDetalheLoading ? (
+                <p className="empty-state">Carregando dados do pet...</p>
+              ) : petDetalheError ? (
+                <p className="empty-state">Não foi possível carregar os dados do pet.</p>
+              ) : petSelecionado ? (
+                <>
+                  <div className="pet-detail-header">
+                    <div className="pet-detail-avatar">{petSelecionado.nome?.charAt(0).toUpperCase() || 'P'}</div>
+                    <div>
+                      <h3>{petSelecionado.nome}</h3>
+                      <span>{petSelecionado.especie} · {petSelecionado.raca || 'Raça não informada'}</span>
+                    </div>
+                    {!isTutorView && !petEditando && (
+                      <button type="button" className="secondary-button" onClick={iniciarEdicaoPet}>Editar</button>
+                    )}
                   </div>
-                  {!isTutorView && !petEditando && (
-                    <button type="button" className="secondary-button" onClick={iniciarEdicaoPet}>Editar</button>
+
+                  {petEditando && !isTutorView ? (
+                    <div className="pet-edit-form">
+                      <div className="pet-edit-grid">
+                        <label>
+                          <span>Nome</span>
+                          <input type="text" name="nome" value={petForm.nome} onChange={handlePetFieldChange} />
+                        </label>
+                        <label>
+                          <span>Espécie</span>
+                          <input type="text" name="especie" value={petForm.especie} onChange={handlePetFieldChange} />
+                        </label>
+                        <label>
+                          <span>Raça</span>
+                          <input type="text" name="raca" value={petForm.raca} onChange={handlePetFieldChange} />
+                        </label>
+                        <label>
+                          <span>Idade</span>
+                          <input type="number" name="idade" value={petForm.idade} onChange={handlePetFieldChange} />
+                        </label>
+                        <label>
+                          <span>Peso</span>
+                          <input type="number" step="0.1" name="peso" value={petForm.peso} onChange={handlePetFieldChange} />
+                        </label>
+                      </div>
+
+                      <div className="pet-edit-actions">
+                        <button type="button" className="secondary-button" onClick={() => setPetEditando(false)}>Cancelar</button>
+                        <button type="button" className="primary-button small-button" onClick={salvarEdicaoPet}>Salvar alterações</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pet-detail-grid">
+                      <div className="detail-item">
+                        <span>Nome do pet</span>
+                        <strong>{petSelecionado.nome}</strong>
+                      </div>
+                      <div className="detail-item">
+                        <span>Espécie</span>
+                        <strong>{petSelecionado.especie}</strong>
+                      </div>
+                      <div className="detail-item">
+                        <span>Raça</span>
+                        <strong>{petSelecionado.raca || 'Não informado'}</strong>
+                      </div>
+                      <div className="detail-item">
+                        <span>Idade</span>
+                        <strong>{petSelecionado.idade} anos</strong>
+                      </div>
+                      <div className="detail-item">
+                        <span>Peso</span>
+                        <strong>{petSelecionado.peso} kg</strong>
+                      </div>
+                      <div className="detail-item">
+                        <span>Tutor</span>
+                        <strong>{petSelecionado.tutor?.nome || 'Não informado'}</strong>
+                      </div>
+                      <div className="detail-item">
+                        <span>E-mail do tutor</span>
+                        <strong>{petSelecionado.tutor?.email || 'Não informado'}</strong>
+                      </div>
+                      <div className="detail-item">
+                        <span>Telefone</span>
+                        <strong>{petSelecionado.tutor?.telefone || 'Não informado'}</strong>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'flex-start' }}>
+                  <p className="empty-state">
+                    {pets.length === 0
+                      ? 'Você ainda não possui pets cadastrados.'
+                      : 'Selecione um pet para ver os detalhes.'}
+                  </p>
+                  {!isTutorView && (
+                    <>
+                      <button
+                        type="button"
+                        className="primary-button small-button"
+                        onClick={() => navegarParaSecao('pets')}
+                      >
+                        {mostrarFormPet ? 'Fechar cadastro' : 'Cadastrar pet'}
+                      </button>
+
+                      {mostrarFormPet && (
+                        <div className="pet-detail-panel" style={{ width: '100%', marginTop: '8px' }}>
+                          <div className="pet-detail-header">
+                            <div className="pet-detail-avatar">+</div>
+                            <div>
+                              <h3>Novo pet</h3>
+                              <span>Adicionar animal ao cadastro</span>
+                            </div>
+                          </div>
+
+                          <div className="pet-edit-form">
+                            <div className="pet-edit-grid">
+                              <label>
+                                <span>Nome</span>
+                                <input type="text" name="nome" value={petForm.nome} onChange={handlePetFieldChange} required />
+                              </label>
+                              <label>
+                                <span>Espécie</span>
+                                <input type="text" name="especie" value={petForm.especie} onChange={handlePetFieldChange} required />
+                              </label>
+                              <label>
+                                <span>Raça</span>
+                                <input type="text" name="raca" value={petForm.raca} onChange={handlePetFieldChange} />
+                              </label>
+                              <label>
+                                <span>Idade</span>
+                                <input type="number" min="0" name="idade" value={petForm.idade} onChange={handlePetFieldChange} required />
+                              </label>
+                              <label>
+                                <span>Peso</span>
+                                <input type="number" min="0" step="0.1" name="peso" value={petForm.peso} onChange={handlePetFieldChange} required />
+                              </label>
+                            </div>
+
+                            <div className="pet-edit-actions">
+                              <button type="button" className="secondary-button" onClick={() => setMostrarFormPet(false)}>Cancelar</button>
+                              <button type="button" className="primary-button small-button" onClick={criarPet}>Salvar pet</button>
+                            </div>
+                            {petFormStatus && <p className="status-message" role="status">{petFormStatus}</p>}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-
-                {petEditando && !isTutorView ? (
-                  <div className="pet-edit-form">
-                    <div className="pet-edit-grid">
-                      <label>
-                        <span>Nome</span>
-                        <input type="text" name="nome" value={petForm.nome} onChange={handlePetFieldChange} />
-                      </label>
-                      <label>
-                        <span>Espécie</span>
-                        <input type="text" name="especie" value={petForm.especie} onChange={handlePetFieldChange} />
-                      </label>
-                      <label>
-                        <span>Raça</span>
-                        <input type="text" name="raca" value={petForm.raca} onChange={handlePetFieldChange} />
-                      </label>
-                      <label>
-                        <span>Idade</span>
-                        <input type="number" name="idade" value={petForm.idade} onChange={handlePetFieldChange} />
-                      </label>
-                      <label>
-                        <span>Peso</span>
-                        <input type="number" step="0.1" name="peso" value={petForm.peso} onChange={handlePetFieldChange} />
-                      </label>
-                    </div>
-
-                    <div className="pet-edit-actions">
-                      <button type="button" className="secondary-button" onClick={() => setPetEditando(false)}>Cancelar</button>
-                      <button type="button" className="primary-button small-button" onClick={salvarEdicaoPet}>Salvar alterações</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="pet-detail-grid">
-                    <div className="detail-item">
-                      <span>Nome do pet</span>
-                      <strong>{petSelecionado.nome}</strong>
-                    </div>
-                    <div className="detail-item">
-                      <span>Espécie</span>
-                      <strong>{petSelecionado.especie}</strong>
-                    </div>
-                    <div className="detail-item">
-                      <span>Raça</span>
-                      <strong>{petSelecionado.raca || 'Não informado'}</strong>
-                    </div>
-                    <div className="detail-item">
-                      <span>Idade</span>
-                      <strong>{petSelecionado.idade} anos</strong>
-                    </div>
-                    <div className="detail-item">
-                      <span>Peso</span>
-                      <strong>{petSelecionado.peso} kg</strong>
-                    </div>
-                    <div className="detail-item">
-                      <span>Tutor</span>
-                      <strong>{petSelecionado.tutor?.nome || 'Não informado'}</strong>
-                    </div>
-                    <div className="detail-item">
-                      <span>E-mail do tutor</span>
-                      <strong>{petSelecionado.tutor?.email || 'Não informado'}</strong>
-                    </div>
-                    <div className="detail-item">
-                      <span>Telefone</span>
-                      <strong>{petSelecionado.tutor?.telefone || 'Não informado'}</strong>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'flex-start' }}>
-                <p className="empty-state">
-                  {pets.length === 0
-                    ? 'Você ainda não possui pets cadastrados.'
-                    : 'Selecione um pet para ver os detalhes.'}
-                </p>
-                {!isTutorView && (
-                  <>
-                    <button
-                      type="button"
-                      className="primary-button small-button"
-                      onClick={() => navegarParaSecao('pets')}
-                    >
-                      {mostrarFormPet ? 'Fechar cadastro' : 'Cadastrar pet'}
-                    </button>
-
-                    {mostrarFormPet && (
-                      <div className="pet-detail-panel" style={{ width: '100%', marginTop: '8px' }}>
-                        <div className="pet-detail-header">
-                          <div className="pet-detail-avatar">+</div>
-                          <div>
-                            <h3>Novo pet</h3>
-                            <span>Adicionar animal ao cadastro</span>
-                          </div>
-                        </div>
-
-                        <div className="pet-edit-form">
-                          <div className="pet-edit-grid">
-                            <label>
-                              <span>Nome</span>
-                              <input type="text" name="nome" value={petForm.nome} onChange={handlePetFieldChange} required />
-                            </label>
-                            <label>
-                              <span>Espécie</span>
-                              <input type="text" name="especie" value={petForm.especie} onChange={handlePetFieldChange} required />
-                            </label>
-                            <label>
-                              <span>Raça</span>
-                              <input type="text" name="raca" value={petForm.raca} onChange={handlePetFieldChange} />
-                            </label>
-                            <label>
-                              <span>Idade</span>
-                              <input type="number" min="0" name="idade" value={petForm.idade} onChange={handlePetFieldChange} required />
-                            </label>
-                            <label>
-                              <span>Peso</span>
-                              <input type="number" min="0" step="0.1" name="peso" value={petForm.peso} onChange={handlePetFieldChange} required />
-                            </label>
-                          </div>
-
-                          <div className="pet-edit-actions">
-                            <button type="button" className="secondary-button" onClick={() => setMostrarFormPet(false)}>Cancelar</button>
-                            <button type="button" className="primary-button small-button" onClick={criarPet}>Salvar pet</button>
-                          </div>
-                          {petFormStatus && <p className="status-message" role="status">{petFormStatus}</p>}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           )}
 
           {(abaAtiva === 'dashboard' || abaAtiva === 'consultas') && (
-            <div id="consultas" className="record-panel">
-              <div className="panel-header">
-                <h3>Consultas</h3>
-                {!isTutorView && <button type="button" className="panel-action" onClick={() => navegarParaSecao('agendamentos')}>+ Marcar</button>}
-              </div>
-
-              {consultaStatus && <p className="status-message" role="status">{consultaStatus}</p>}
-              {consultasVisiveis.length > 0 ? consultasVisiveis.map((consulta, index) => (
-                <article key={consulta.id || index} className="record-card">
-                  <div className="record-topline">
-                    <span className="record-tag">Consulta · {consulta.status === 'concluida' ? 'Concluída' : 'Agendada'}</span>
-                    <time>{consulta.agendamento?.data ? `${new Date(consulta.agendamento.data).toLocaleDateString('pt-BR')} às ${consulta.agendamento.horario}` : consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
-                  </div>
-                  <h4>{consulta.motivoConsulta || 'Consulta veterinária'}</h4>
-                  <div className="record-meta">
-                    <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
-                    <span>{consulta.pet?.nome || petSelecionado?.nome || 'Pet'}</span>
-                  </div>
-                  <ul>
-                    {(consulta.procedimentos || ['Consulta realizada']).map((item, index) => (
-                      <li key={`${consulta.id || 'consulta'}-${index}`}>{item}</li>
-                    ))}
-                  </ul>
-                  {!isTutorView && (
-                    <div className="pet-edit-actions">
-                      <button type="button" className="secondary-button">Desmarcar</button>
-                      {consulta.status !== 'concluida' && consulta.agendamento?.id && ['administrador', 'veterinario'].includes(usuarioAtual?.perfil) && (
-                        <button type="button" className="primary-button small-button" onClick={() => concluirConsultaAgendada(consulta)}>Concluir atendimento</button>
-                      )}
-                    </div>
-                  )}
-                </article>
-              )) : (
-                <p className="empty-state">Nenhuma consulta para este pet.</p>
-              )}
-            </div>
+            <ConsultasPage
+              consultas={consultasVisiveis}
+              isTutorView={isTutorView}
+              consultaStatus={consultaStatus}
+              usuarioAtual={usuarioAtual}
+              petSelecionado={petSelecionado}
+              onMarcar={() => navegarParaSecao('agendamentos')}
+              onConcluir={concluirConsultaAgendada}
+              onDesmarcar={desmarcarConsultaAgendada}
+              onReabrir={reabrirConsulta}
+            />
           )}
 
-          {abaAtiva === 'agendamentos' && !isTutorView && <AgendamentosPage onConsultasAtualizadas={refetchConsultas} onAgendamentosAtualizados={refetchAgendamentos} />}
+        {abaAtiva === 'agendamentos' && !isTutorView && <AgendamentosPage onConsultasAtualizadas={refetchConsultas} onAgendamentosAtualizados={refetchAgendamentos} />}
 
-          {abaAtiva === 'dashboard' && !isTutorView && (
-            <div id="agendamentos" className="record-panel">
-              <div className="panel-header">
-                <h3>Agendamentos</h3>
-                <button type="button" className="panel-action" onClick={() => navegarParaSecao('agendamentos')}>+ Agendar</button>
-              </div>
+        {abaAtiva === 'dashboard' && !isTutorView && (
+          <div id="agendamentos" className="record-panel">
+            <div className="panel-header">
+              <h3>Agendamentos</h3>
+              <button type="button" className="panel-action" onClick={() => navegarParaSecao('agendamentos')}>+ Agendar</button>
+            </div>
 
-              {agendamentosLoading ? (
-                <p className="empty-state">Carregando agendamentos...</p>
-              ) : agendamentosError ? (
-                <p className="empty-state" role="alert">Não foi possível carregar os agendamentos.</p>
-              ) : agendamentosDashboard.length > 0 ? agendamentosDashboard.slice(0, 3).map((agendamento) => (
-                <article key={agendamento.id} className="record-card">
+            {agendamentosLoading ? (
+              <p className="empty-state">Carregando agendamentos...</p>
+            ) : agendamentosError ? (
+              <p className="empty-state" role="alert">Não foi possível carregar os agendamentos.</p>
+            ) : agendamentosDashboard.length > 0 ? agendamentosDashboard.slice(0, 3).map((agendamento) => (
+              <article key={agendamento.id} className="record-card">
+                <div className="record-topline">
+                  <span className="record-tag">{agendamento.status}</span>
+                  <time>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(agendamento.data))} às {agendamento.horario}</time>
+                </div>
+                <h4>{agendamento.pet?.nome || 'Pet'} · {agendamento.pet?.especie || 'Espécie não informada'}</h4>
+                <div className="record-meta">
+                  <span>{agendamento.veterinario?.nome || 'Veterinário'}</span>
+                  <span>{agendamento.observacoes || 'Sem observações'}</span>
+                </div>
+                <div className="pet-edit-actions">
+                  <button type="button" className="primary-button small-button" onClick={() => navegarParaSecao('agendamentos')}>Abrir agenda</button>
+                </div>
+              </article>
+            )) : (
+              <p className="empty-state">Nenhum agendamento futuro.</p>
+            )}
+          </div>
+        )}
+
+        {(abaAtiva === 'dashboard' || abaAtiva === 'vacinas') && (
+          <div id="vacinas" className="record-panel">
+            <div className="panel-header">
+              <h3>Vacinas</h3>
+              {!isTutorView && <button type="button" className="panel-action">+ Agendar</button>}
+            </div>
+
+            {petSelecionado ? (
+              <>
+                {!isTutorView && (
+                  <>
+                    <div className="pet-detail-panel" style={{ marginBottom: '16px' }}>
+                      <div className="pet-detail-header">
+                        <div className="pet-detail-avatar">{petSelecionado.nome?.charAt(0).toUpperCase() || 'P'}</div>
+                        <div>
+                          <h3>{petSelecionado.nome}</h3>
+                          <span>{petSelecionado.especie} · {petSelecionado.raca || 'Raça não informada'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pet-edit-form">
+                      <div className="pet-edit-grid">
+                        <label>
+                          <span>Tipo da vacina</span>
+                          <input type="text" value={prontuarioForm.tipoVacina} onChange={handleProntuarioFieldChange} name="tipoVacina" placeholder="Ex.: V10, antirrábica, giárdia" />
+                        </label>
+                        <label>
+                          <span>Data da aplicação</span>
+                          <input type="date" value={prontuarioForm.data} onChange={handleProntuarioFieldChange} name="data" />
+                        </label>
+                        <label>
+                          <span>Data prevista do reforço</span>
+                          <input type="date" value={prontuarioForm.reforco} onChange={handleProntuarioFieldChange} name="reforco" />
+                        </label>
+                      </div>
+
+                      <div className="pet-edit-actions">
+                        <button type="button" className="secondary-button" onClick={() => setProntuarioForm((prev) => ({ ...prev, tipoVacina: '', data: '', reforco: '', observacoes: '' }))}>Cancelar</button>
+                        <button type="button" className="primary-button small-button" onClick={salvarProntuario}>Salvar vacinação</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="record-card" style={{ marginTop: '20px' }}>
                   <div className="record-topline">
-                    <span className="record-tag">{agendamento.status}</span>
-                    <time>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(agendamento.data))} às {agendamento.horario}</time>
+                    <span className="record-tag">Calendário</span>
+                    <span>Próximas vacinas</span>
                   </div>
-                  <h4>{agendamento.pet?.nome || 'Pet'} · {agendamento.pet?.especie || 'Espécie não informada'}</h4>
-                  <div className="record-meta">
-                    <span>{agendamento.veterinario?.nome || 'Veterinário'}</span>
-                    <span>{agendamento.observacoes || 'Sem observações'}</span>
+
+                  {vacinasAtuais.length > 0 ? vacinasAtuais.map((vacina) => (
+                    <div key={vacina.id} style={{ marginTop: '12px', borderTop: '1px solid #edf2f5', paddingTop: '12px' }}>
+                      <h4>{vacina.tipo}</h4>
+                      <ul>
+                        <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
+                        <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
+                        {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
+                      </ul>
+                    </div>
+                  )) : (
+                    <p className="empty-state" style={{ marginTop: '12px' }}>Nenhuma vacina registrada para este pet.</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="empty-state">Selecione um pet para agendar a vacinação.</p>
+            )}
+          </div>
+        )}
+
+        {!isTutorView && (abaAtiva === 'dashboard' || abaAtiva === 'usuarios') && (
+          <div id="usuarios" className="admin-list-panel">
+            <div className="panel-header">
+              <h3>Usuários cadastrados</h3>
+              <span className="panel-counter">{usuarios.length}</span>
+            </div>
+
+            {usuariosLoading ? (
+              <p className="empty-state">Carregando usuários...</p>
+            ) : usuariosError ? (
+              <p className="empty-state">Não foi possível carregar os usuários.</p>
+            ) : (
+              <>
+                <div className="user-table">
+                  <div className="user-table-header user-row">
+                    <span>Nome</span>
+                    <span>E-mail</span>
+                    <span>Perfil</span>
+                    <span>Status</span>
                   </div>
+
+                  {usuariosPagina.map((usuario) => (
+                    <div key={usuario.id} className="user-row">
+                      <span>{usuario.nome}</span>
+                      <span>{usuario.email}</span>
+                      <span>
+                        <select
+                          className="profile-select"
+                          value={usuario.perfil}
+                          onChange={(event) => handleUsuarioPerfilChange(usuario.id, event.target.value)}
+                        >
+                          <option value="administrador">Administrador</option>
+                          <option value="veterinario">Veterinário</option>
+                          <option value="recepcionista">Recepcionista</option>
+                          <option value="tutor">Tutor</option>
+                        </select>
+                      </span>
+                      <span className="user-status-control">
+                        <span className={`badge-status ${usuario.ativo ? 'online' : 'offline'}`}>
+                          {usuario.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+                        <label className="switch" aria-label={`Alterar status de ${usuario.nome}`}>
+                          <input
+                            type="checkbox"
+                            checked={usuario.ativo}
+                            onChange={(event) => handleUsuarioStatusChange(usuario.id, event.target.checked)}
+                          />
+                          <span className="slider" />
+                        </label>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pagination-row pagination-users">
+                  <button type="button" disabled={usuariosPage === 1} onClick={() => mostrarPagina(usuariosPage - 1, totalUsuariosPages, setUsuariosPage)}>
+                    Anterior
+                  </button>
+                  <span>
+                    {usuariosPage}/{totalUsuariosPages}
+                  </span>
+                  <button type="button" disabled={usuariosPage === totalUsuariosPages} onClick={() => mostrarPagina(usuariosPage + 1, totalUsuariosPages, setUsuariosPage)}>
+                    Próxima
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {abaAtiva === 'dashboard' && (
+          <div id="prontuarios" className="record-panel">
+            <div className="panel-header">
+              <h3>Prontuários</h3>
+              {!isTutorView && <button type="button" className="panel-action">Filtrar</button>}
+            </div>
+
+            {!isTutorView && (
+              <div className="pet-detail-panel" style={{ marginBottom: '18px' }}>
+                <div className="pet-detail-header">
+                  <div className="pet-detail-avatar">+</div>
+                  <div>
+                    <h3>Nova consulta</h3>
+                    <span>Registrar atendimento veterinário</span>
+                  </div>
+                </div>
+
+                <div className="pet-edit-form">
+                  <div className="pet-edit-grid">
+                    <label>
+                      <span>Pet</span>
+                      <select name="petId" value={consultaForm.petId} onChange={handleConsultaFieldChange}>
+                        <option value="">Selecione o pet</option>
+                        {pets.map((pet) => (
+                          <option key={pet.id} value={pet.id}>{pet.nome}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Veterinário</span>
+                      <select name="veterinario" value={consultaForm.veterinario} onChange={handleConsultaFieldChange}>
+                        <option value="">Selecione o veterinário</option>
+                        {veterinarios.length === 0 && <option value="" disabled>Nenhum veterinário cadastrado</option>}
+                        {veterinarios.map((veterinario) => (
+                          <option key={veterinario.id} value={veterinario.id}>{veterinario.nome}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Data da consulta</span>
+                      <input type="date" name="data" value={consultaForm.data} onChange={handleConsultaFieldChange} />
+                    </label>
+                    <label>
+                      <span>Status</span>
+                      <select name="status" value={consultaForm.status} onChange={handleConsultaFieldChange}>
+                        <option value="agendada">Agendada</option>
+                        <option value="realizada">Realizada</option>
+                        <option value="cancelada">Cancelada</option>
+                      </select>
+                    </label>
+                    <label style={{ gridColumn: '1 / -1' }}>
+                      <span>Motivo da consulta</span>
+                      <input
+                        type="text"
+                        name="motivoConsulta"
+                        value={consultaForm.motivoConsulta}
+                        onChange={handleConsultaFieldChange}
+                        placeholder="Ex.: Consulta de rotina, dor abdominal, vacinação..."
+                      />
+                    </label>
+                    <label style={{ gridColumn: '1 / -1' }}>
+                      <span>Procedimentos realizados</span>
+                      <textarea
+                        name="procedimentos"
+                        value={consultaForm.procedimentos}
+                        onChange={handleConsultaFieldChange}
+                        rows="3"
+                        placeholder="Descreva exames, medicamentos, procedimentos e evolução."
+                      />
+                    </label>
+                    <label style={{ gridColumn: '1 / -1' }}>
+                      <span>Observações</span>
+                      <textarea
+                        name="observacoes"
+                        value={consultaForm.observacoes}
+                        onChange={handleConsultaFieldChange}
+                        rows="3"
+                        placeholder="Informe sintomas, conduta, orientações e retorno."
+                      />
+                    </label>
+                  </div>
+
                   <div className="pet-edit-actions">
-                    <button type="button" className="primary-button small-button" onClick={() => navegarParaSecao('agendamentos')}>Abrir agenda</button>
+                    <button type="button" className="secondary-button" onClick={limparFormularioConsulta}>Limpar</button>
+                    <button type="button" className="primary-button small-button" onClick={salvarConsulta}>Salvar consulta</button>
                   </div>
-                </article>
-              )) : (
-                <p className="empty-state">Nenhum agendamento futuro.</p>
-              )}
-            </div>
-          )}
-
-          {(abaAtiva === 'dashboard' || abaAtiva === 'vacinas') && (
-            <div id="vacinas" className="record-panel">
-              <div className="panel-header">
-                <h3>Vacinas</h3>
-                {!isTutorView && <button type="button" className="panel-action">+ Agendar</button>}
+                </div>
               </div>
+            )}
 
-              {petSelecionado ? (
-                <>
-                  {!isTutorView && (
-                    <>
-                      <div className="pet-detail-panel" style={{ marginBottom: '16px' }}>
-                        <div className="pet-detail-header">
-                          <div className="pet-detail-avatar">{petSelecionado.nome?.charAt(0).toUpperCase() || 'P'}</div>
-                          <div>
-                            <h3>{petSelecionado.nome}</h3>
-                            <span>{petSelecionado.especie} · {petSelecionado.raca || 'Raça não informada'}</span>
-                          </div>
-                        </div>
-                      </div>
+            {!isTutorView && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                <button type="button" className="primary-button small-button" onClick={() => setMostrarFormProntuario((prev) => !prev)}>
+                  {mostrarFormProntuario ? 'Fechar prontuário' : 'Adicionar prontuário'}
+                </button>
+              </div>
+            )}
 
-                      <div className="pet-edit-form">
-                        <div className="pet-edit-grid">
-                          <label>
-                            <span>Tipo da vacina</span>
-                            <input type="text" value={prontuarioForm.tipoVacina} onChange={handleProntuarioFieldChange} name="tipoVacina" placeholder="Ex.: V10, antirrábica, giárdia" />
-                          </label>
-                          <label>
-                            <span>Data da aplicação</span>
-                            <input type="date" value={prontuarioForm.data} onChange={handleProntuarioFieldChange} name="data" />
-                          </label>
-                          <label>
-                            <span>Data prevista do reforço</span>
-                            <input type="date" value={prontuarioForm.reforco} onChange={handleProntuarioFieldChange} name="reforco" />
-                          </label>
-                        </div>
+            {mostrarFormProntuario && !isTutorView && (
+              <div className="pet-detail-panel" style={{ marginBottom: '18px' }}>
+                <div className="pet-detail-header">
+                  <div className="pet-detail-avatar">+</div>
+                  <div>
+                    <h3>Adicionar prontuário</h3>
+                    <span>Registrar consulta ou vacina para qualquer pet</span>
+                  </div>
+                </div>
 
-                        <div className="pet-edit-actions">
-                          <button type="button" className="secondary-button" onClick={() => setProntuarioForm((prev) => ({ ...prev, tipoVacina: '', data: '', reforco: '', observacoes: '' }))}>Cancelar</button>
-                          <button type="button" className="primary-button small-button" onClick={salvarProntuario}>Salvar vacinação</button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                <div className="pet-edit-form">
+                  <div className="pet-edit-grid">
+                    <label>
+                      <span>Tipo</span>
+                      <select name="tipo" value={prontuarioForm.tipo} onChange={handleProntuarioFieldChange}>
+                        <option value="consulta">Consulta</option>
+                        <option value="vacina">Vacina</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Pet</span>
+                      <select name="petId" value={prontuarioForm.petId} onChange={handleProntuarioFieldChange}>
+                        <option value="">Selecione o pet</option>
+                        {pets.map((pet) => (
+                          <option key={pet.id} value={pet.id}>{pet.nome}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Veterinário</span>
+                      <select name="veterinario" value={prontuarioForm.veterinario} onChange={handleProntuarioFieldChange}>
+                        <option value="">Selecione o veterinário</option>
+                        {veterinarios.length === 0 && <option value="" disabled>Nenhum veterinário cadastrado</option>}
+                        {veterinarios.map((veterinario) => (
+                          <option key={veterinario.id} value={veterinario.id}>{veterinario.nome}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Data</span>
+                      <input type="date" name="data" value={prontuarioForm.data} onChange={handleProntuarioFieldChange} />
+                    </label>
+                    {prontuarioForm.tipo === 'vacina' ? (
+                      <>
+                        <label>
+                          <span>Tipo da vacina</span>
+                          <input type="text" name="tipoVacina" value={prontuarioForm.tipoVacina} onChange={handleProntuarioFieldChange} placeholder="Ex.: V10" />
+                        </label>
+                        <label>
+                          <span>Reforço</span>
+                          <input type="date" name="reforco" value={prontuarioForm.reforco} onChange={handleProntuarioFieldChange} />
+                        </label>
+                      </>
+                    ) : (
+                      <label style={{ gridColumn: '1 / -1' }}>
+                        <span>Motivo da consulta</span>
+                        <input type="text" name="motivo" value={prontuarioForm.motivo} onChange={handleProntuarioFieldChange} placeholder="Ex.: Dor abdominal, check-up, vacinação..." />
+                      </label>
+                    )}
+                    {prontuarioForm.tipo === 'consulta' && (
+                      <label style={{ gridColumn: '1 / -1' }}>
+                        <span>Procedimentos</span>
+                        <textarea name="procedimentos" rows="3" value={prontuarioForm.procedimentos} onChange={handleProntuarioFieldChange} placeholder="Descreva os procedimentos realizados." />
+                      </label>
+                    )}
+                    <label style={{ gridColumn: '1 / -1' }}>
+                      <span>Observações</span>
+                      <textarea name="observacoes" rows="3" value={prontuarioForm.observacoes} onChange={handleProntuarioFieldChange} placeholder="Descreva o atendimento, evolução e orientações." />
+                    </label>
+                  </div>
 
-                  <div className="record-card" style={{ marginTop: '20px' }}>
+                  <div className="pet-edit-actions">
+                    <button type="button" className="secondary-button" onClick={() => setMostrarFormProntuario(false)}>Cancelar</button>
+                    <button type="button" className="primary-button small-button" onClick={salvarProntuario}>Salvar</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isTutorView && consultasPetLoading ? (
+              <p className="empty-state">Carregando prontuário do pet...</p>
+            ) : isTutorView && consultasPetError ? (
+              <p className="empty-state">Não foi possível carregar o prontuário deste pet.</p>
+            ) : (!isTutorView && consultasLoading) ? (
+              <p className="empty-state">Carregando prontuários...</p>
+            ) : (!isTutorView && consultasError) ? (
+              <p className="empty-state">Não foi possível carregar os prontuários.</p>
+            ) : historicoProntuarios.length === 0 && vacinasAtuais.length === 0 ? (
+              <p className="empty-state">Nenhum prontuário cadastrado para este pet.</p>
+            ) : (
+              <>
+                {historicoProntuarios.map((consulta) => (
+                  <article key={consulta.id} className="record-card">
                     <div className="record-topline">
-                      <span className="record-tag">Calendário</span>
-                      <span>Próximas vacinas</span>
+                      <span className="record-tag">Consulta</span>
+                      <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
                     </div>
 
-                    {vacinasAtuais.length > 0 ? vacinasAtuais.map((vacina) => (
+                    <h4>{consulta.motivoConsulta || 'Consulta veterinária'}</h4>
+
+                    <div className="record-meta">
+                      <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
+                      <span>{consulta.pet?.nome || petSelecionado?.nome}</span>
+                    </div>
+
+                    <ul>
+                      {(consulta.procedimentos || ['Consulta realizada']).map((procedimento, index) => (
+                        <li key={`${consulta.id}-${index}`}>{procedimento}</li>
+                      ))}
+                    </ul>
+
+                    <p>{consulta.observacoes || 'Sem observações adicionais.'}</p>
+                  </article>
+                ))}
+
+                {vacinasAtuais.length > 0 && (
+                  <article className="record-card">
+                    <div className="record-topline">
+                      <span className="record-tag">Vacinas</span>
+                      <span>{vacinasAtuais.length} registro(s)</span>
+                    </div>
+
+                    {vacinasAtuais.map((vacina) => (
                       <div key={vacina.id} style={{ marginTop: '12px', borderTop: '1px solid #edf2f5', paddingTop: '12px' }}>
                         <h4>{vacina.tipo}</h4>
+                        <div className="record-meta">
+                          <span>{vacina.veterinario?.nome || 'Veterinário'}</span>
+                          <span>{vacina.pet?.nome || petSelecionado?.nome}</span>
+                        </div>
                         <ul>
                           <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
                           <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
                           {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
                         </ul>
                       </div>
-                    )) : (
-                      <p className="empty-state" style={{ marginTop: '12px' }}>Nenhuma vacina registrada para este pet.</p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="empty-state">Selecione um pet para agendar a vacinação.</p>
-              )}
-            </div>
-          )}
-
-          {!isTutorView && (abaAtiva === 'dashboard' || abaAtiva === 'usuarios') && (
-            <div id="usuarios" className="admin-list-panel">
-              <div className="panel-header">
-                <h3>Usuários cadastrados</h3>
-                <span className="panel-counter">{usuarios.length}</span>
-              </div>
-
-              {usuariosLoading ? (
-                <p className="empty-state">Carregando usuários...</p>
-              ) : usuariosError ? (
-                <p className="empty-state">Não foi possível carregar os usuários.</p>
-              ) : (
-                <>
-                  <div className="user-table">
-                    <div className="user-table-header user-row">
-                      <span>Nome</span>
-                      <span>E-mail</span>
-                      <span>Perfil</span>
-                      <span>Status</span>
-                    </div>
-
-                    {usuariosPagina.map((usuario) => (
-                      <div key={usuario.id} className="user-row">
-                        <span>{usuario.nome}</span>
-                        <span>{usuario.email}</span>
-                        <span>
-                          <select
-                            className="profile-select"
-                            value={usuario.perfil}
-                            onChange={(event) => handleUsuarioPerfilChange(usuario.id, event.target.value)}
-                          >
-                            <option value="administrador">Administrador</option>
-                            <option value="veterinario">Veterinário</option>
-                            <option value="recepcionista">Recepcionista</option>
-                            <option value="tutor">Tutor</option>
-                          </select>
-                        </span>
-                        <span className="user-status-control">
-                          <span className={`badge-status ${usuario.ativo ? 'online' : 'offline'}`}>
-                            {usuario.ativo ? 'Ativo' : 'Inativo'}
-                          </span>
-                          <label className="switch" aria-label={`Alterar status de ${usuario.nome}`}>
-                            <input
-                              type="checkbox"
-                              checked={usuario.ativo}
-                              onChange={(event) => handleUsuarioStatusChange(usuario.id, event.target.checked)}
-                            />
-                            <span className="slider" />
-                          </label>
-                        </span>
-                      </div>
                     ))}
-                  </div>
-
-                  <div className="pagination-row pagination-users">
-                    <button type="button" disabled={usuariosPage === 1} onClick={() => mostrarPagina(usuariosPage - 1, totalUsuariosPages, setUsuariosPage)}>
-                      Anterior
-                    </button>
-                    <span>
-                      {usuariosPage}/{totalUsuariosPages}
-                    </span>
-                    <button type="button" disabled={usuariosPage === totalUsuariosPages} onClick={() => mostrarPagina(usuariosPage + 1, totalUsuariosPages, setUsuariosPage)}>
-                      Próxima
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {abaAtiva === 'dashboard' && (
-            <div id="prontuarios" className="record-panel">
-              <div className="panel-header">
-                <h3>Prontuários</h3>
-                {!isTutorView && <button type="button" className="panel-action">Filtrar</button>}
-              </div>
-
-              {!isTutorView && (
-                <div className="pet-detail-panel" style={{ marginBottom: '18px' }}>
-                  <div className="pet-detail-header">
-                    <div className="pet-detail-avatar">+</div>
-                    <div>
-                      <h3>Nova consulta</h3>
-                      <span>Registrar atendimento veterinário</span>
-                    </div>
-                  </div>
-
-                  <div className="pet-edit-form">
-                    <div className="pet-edit-grid">
-                      <label>
-                        <span>Pet</span>
-                        <select name="petId" value={consultaForm.petId} onChange={handleConsultaFieldChange}>
-                          <option value="">Selecione o pet</option>
-                          {pets.map((pet) => (
-                            <option key={pet.id} value={pet.id}>{pet.nome}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <span>Veterinário</span>
-                        <select name="veterinario" value={consultaForm.veterinario} onChange={handleConsultaFieldChange}>
-                          <option value="">Selecione o veterinário</option>
-                          {veterinarios.length === 0 && <option value="" disabled>Nenhum veterinário cadastrado</option>}
-                          {veterinarios.map((veterinario) => (
-                            <option key={veterinario.id} value={veterinario.id}>{veterinario.nome}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <span>Data da consulta</span>
-                        <input type="date" name="data" value={consultaForm.data} onChange={handleConsultaFieldChange} />
-                      </label>
-                      <label>
-                        <span>Status</span>
-                        <select name="status" value={consultaForm.status} onChange={handleConsultaFieldChange}>
-                          <option value="agendada">Agendada</option>
-                          <option value="realizada">Realizada</option>
-                          <option value="cancelada">Cancelada</option>
-                        </select>
-                      </label>
-                      <label style={{ gridColumn: '1 / -1' }}>
-                        <span>Motivo da consulta</span>
-                        <input
-                          type="text"
-                          name="motivoConsulta"
-                          value={consultaForm.motivoConsulta}
-                          onChange={handleConsultaFieldChange}
-                          placeholder="Ex.: Consulta de rotina, dor abdominal, vacinação..."
-                        />
-                      </label>
-                      <label style={{ gridColumn: '1 / -1' }}>
-                        <span>Procedimentos realizados</span>
-                        <textarea
-                          name="procedimentos"
-                          value={consultaForm.procedimentos}
-                          onChange={handleConsultaFieldChange}
-                          rows="3"
-                          placeholder="Descreva exames, medicamentos, procedimentos e evolução."
-                        />
-                      </label>
-                      <label style={{ gridColumn: '1 / -1' }}>
-                        <span>Observações</span>
-                        <textarea
-                          name="observacoes"
-                          value={consultaForm.observacoes}
-                          onChange={handleConsultaFieldChange}
-                          rows="3"
-                          placeholder="Informe sintomas, conduta, orientações e retorno."
-                        />
-                      </label>
-                    </div>
-
-                    <div className="pet-edit-actions">
-                      <button type="button" className="secondary-button" onClick={limparFormularioConsulta}>Limpar</button>
-                      <button type="button" className="primary-button small-button" onClick={salvarConsulta}>Salvar consulta</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {!isTutorView && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-                  <button type="button" className="primary-button small-button" onClick={() => setMostrarFormProntuario((prev) => !prev)}>
-                    {mostrarFormProntuario ? 'Fechar prontuário' : 'Adicionar prontuário'}
-                  </button>
-                </div>
-              )}
-
-              {mostrarFormProntuario && !isTutorView && (
-                <div className="pet-detail-panel" style={{ marginBottom: '18px' }}>
-                  <div className="pet-detail-header">
-                    <div className="pet-detail-avatar">+</div>
-                    <div>
-                      <h3>Adicionar prontuário</h3>
-                      <span>Registrar consulta ou vacina para qualquer pet</span>
-                    </div>
-                  </div>
-
-                  <div className="pet-edit-form">
-                    <div className="pet-edit-grid">
-                      <label>
-                        <span>Tipo</span>
-                        <select name="tipo" value={prontuarioForm.tipo} onChange={handleProntuarioFieldChange}>
-                          <option value="consulta">Consulta</option>
-                          <option value="vacina">Vacina</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>Pet</span>
-                        <select name="petId" value={prontuarioForm.petId} onChange={handleProntuarioFieldChange}>
-                          <option value="">Selecione o pet</option>
-                          {pets.map((pet) => (
-                            <option key={pet.id} value={pet.id}>{pet.nome}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <span>Veterinário</span>
-                        <select name="veterinario" value={prontuarioForm.veterinario} onChange={handleProntuarioFieldChange}>
-                          <option value="">Selecione o veterinário</option>
-                          {veterinarios.length === 0 && <option value="" disabled>Nenhum veterinário cadastrado</option>}
-                          {veterinarios.map((veterinario) => (
-                            <option key={veterinario.id} value={veterinario.id}>{veterinario.nome}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <span>Data</span>
-                        <input type="date" name="data" value={prontuarioForm.data} onChange={handleProntuarioFieldChange} />
-                      </label>
-                      {prontuarioForm.tipo === 'vacina' ? (
-                        <>
-                          <label>
-                            <span>Tipo da vacina</span>
-                            <input type="text" name="tipoVacina" value={prontuarioForm.tipoVacina} onChange={handleProntuarioFieldChange} placeholder="Ex.: V10" />
-                          </label>
-                          <label>
-                            <span>Reforço</span>
-                            <input type="date" name="reforco" value={prontuarioForm.reforco} onChange={handleProntuarioFieldChange} />
-                          </label>
-                        </>
-                      ) : (
-                        <label style={{ gridColumn: '1 / -1' }}>
-                          <span>Motivo da consulta</span>
-                          <input type="text" name="motivo" value={prontuarioForm.motivo} onChange={handleProntuarioFieldChange} placeholder="Ex.: Dor abdominal, check-up, vacinação..." />
-                        </label>
-                      )}
-                      {prontuarioForm.tipo === 'consulta' && (
-                        <label style={{ gridColumn: '1 / -1' }}>
-                          <span>Procedimentos</span>
-                          <textarea name="procedimentos" rows="3" value={prontuarioForm.procedimentos} onChange={handleProntuarioFieldChange} placeholder="Descreva os procedimentos realizados." />
-                        </label>
-                      )}
-                      <label style={{ gridColumn: '1 / -1' }}>
-                        <span>Observações</span>
-                        <textarea name="observacoes" rows="3" value={prontuarioForm.observacoes} onChange={handleProntuarioFieldChange} placeholder="Descreva o atendimento, evolução e orientações." />
-                      </label>
-                    </div>
-
-                    <div className="pet-edit-actions">
-                      <button type="button" className="secondary-button" onClick={() => setMostrarFormProntuario(false)}>Cancelar</button>
-                      <button type="button" className="primary-button small-button" onClick={salvarProntuario}>Salvar</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {isTutorView && consultasPetLoading ? (
-                <p className="empty-state">Carregando prontuário do pet...</p>
-              ) : isTutorView && consultasPetError ? (
-                <p className="empty-state">Não foi possível carregar o prontuário deste pet.</p>
-              ) : (!isTutorView && consultasLoading) ? (
-                <p className="empty-state">Carregando prontuários...</p>
-              ) : (!isTutorView && consultasError) ? (
-                <p className="empty-state">Não foi possível carregar os prontuários.</p>
-              ) : historicoProntuarios.length === 0 && vacinasAtuais.length === 0 ? (
-                <p className="empty-state">Nenhum prontuário cadastrado para este pet.</p>
-              ) : (
-                <>
-                  {historicoProntuarios.map((consulta) => (
-                    <article key={consulta.id} className="record-card">
-                      <div className="record-topline">
-                        <span className="record-tag">Consulta</span>
-                        <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
-                      </div>
-
-                      <h4>{consulta.motivoConsulta || 'Consulta veterinária'}</h4>
-
-                      <div className="record-meta">
-                        <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
-                        <span>{consulta.pet?.nome || petSelecionado?.nome}</span>
-                      </div>
-
-                      <ul>
-                        {(consulta.procedimentos || ['Consulta realizada']).map((procedimento, index) => (
-                          <li key={`${consulta.id}-${index}`}>{procedimento}</li>
-                        ))}
-                      </ul>
-
-                      <p>{consulta.observacoes || 'Sem observações adicionais.'}</p>
-                    </article>
-                  ))}
-
-                  {vacinasAtuais.length > 0 && (
-                    <article className="record-card">
-                      <div className="record-topline">
-                        <span className="record-tag">Vacinas</span>
-                        <span>{vacinasAtuais.length} registro(s)</span>
-                      </div>
-
-                      {vacinasAtuais.map((vacina) => (
-                        <div key={vacina.id} style={{ marginTop: '12px', borderTop: '1px solid #edf2f5', paddingTop: '12px' }}>
-                          <h4>{vacina.tipo}</h4>
-                          <div className="record-meta">
-                            <span>{vacina.veterinario?.nome || 'Veterinário'}</span>
-                            <span>{vacina.pet?.nome || petSelecionado?.nome}</span>
-                          </div>
-                          <ul>
-                            <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
-                            <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
-                            {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
-                          </ul>
-                        </div>
-                      ))}
-                    </article>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </section>
-      </main>
-    </div>
+                  </article>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </section>
+    </main>
+    </div >
   );
 }
 

@@ -123,6 +123,37 @@
   overflow-wrap: anywhere;
 }
 
+.workspace-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #edf2f5;
+  padding-top: 14px;
+  color: #41607a;
+  font-size: 0.82rem;
+}
+
+.workspace-pagination button {
+  border: 1px solid #dfeaf0;
+  border-radius: 8px;
+  background: #fff;
+  color: #35566d;
+  padding: 9px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.workspace-pagination button:hover:not(:disabled) {
+  border-color: #b9d9e5;
+  background: #f5fbff;
+}
+
+.workspace-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .workspace-detail {
   margin: 0;
 }
