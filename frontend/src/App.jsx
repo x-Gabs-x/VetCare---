@@ -2,9 +2,11 @@ import { useQuery } from '@apollo/client/react';
 import { useState } from 'react';
 import './App.css';
 import PetsProntuariosPage from './pages/PetsProntuariosPage';
+import AgendamentosPage from './pages/AgendamentosPage';
 import {
   GET_CONSULTAS,
   GET_CONSULTAS_POR_PET,
+  GET_AGENDAMENTOS,
   GET_PET,
   GET_PETS,
   GET_PRONTUARIOS,
@@ -41,6 +43,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const [mostrarFormProntuario, setMostrarFormProntuario] = useState(false);
   const [mostrarFormPet, setMostrarFormPet] = useState(false);
   const [petFormStatus, setPetFormStatus] = useState('');
+  const [consultaStatus, setConsultaStatus] = useState('');
   const [petForm, setPetForm] = useState({ nome: '', especie: '', raca: '', idade: '', peso: '' });
   const [consultaForm, setConsultaForm] = useState({
     petId: '',
@@ -69,7 +72,8 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
 
   const { data: petsData, loading: petsLoading, error: petsError, refetch: refetchPets } = useQuery(GET_PETS);
   const { data: usuariosData, loading: usuariosLoading, error: usuariosError, refetch: refetchUsuarios } = useQuery(GET_USUARIOS, { skip: isTutorView });
-  const { data: consultasData, loading: consultasLoading, error: consultasError } = useQuery(GET_CONSULTAS, { skip: isTutorView });
+  const { data: consultasData, loading: consultasLoading, error: consultasError, refetch: refetchConsultas } = useQuery(GET_CONSULTAS, { skip: isTutorView });
+  const { data: agendamentosData, loading: agendamentosLoading, error: agendamentosError, refetch: refetchAgendamentos } = useQuery(GET_AGENDAMENTOS, { skip: isTutorView });
   const { data: prontuariosData, refetch: refetchProntuarios } = useQuery(GET_PRONTUARIOS);
   const { data: petDetalheData, loading: petDetalheLoading, error: petDetalheError, refetch: refetchPetDetalhe } = useQuery(GET_PET, {
     variables: { id: petSelecionadoId || '' },
@@ -98,6 +102,17 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const usuarios = usuariosData?.usuarios ?? [];
   const veterinarios = usuarios.filter((usuario) => usuario.perfil === 'veterinario' && usuario.ativo);
   const consultas = consultasData?.consultas ?? [];
+  const agendamentos = agendamentosData?.agendamentos ?? [];
+  const hojeNaClinica = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+  const agendamentosDashboard = agendamentos.filter((agendamento) =>
+    !['cancelado', 'concluido'].includes(agendamento.status) &&
+    String(agendamento.data).slice(0, 10) >= hojeNaClinica
+  );
   const consultasPet = consultasPetData?.consultasPorPet ?? [];
   const vacinasPet = vacinasPetData?.vacinasPorPet ?? [];
   const petSelecionado = petDetalheData?.pet || pets.find((pet) => pet.id === petSelecionadoId) || pets[0] || null;
@@ -107,6 +122,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
         if (!petSelecionado) return true;
         return consulta.pet?.id === petSelecionado.id;
       });
+  const consultasVisiveis = !isTutorView && abaAtiva === 'consultas' ? consultas : prontuarios;
   const registrosClinicos = prontuariosData?.prontuarios || [];
   const ultimaData = [...registrosClinicos.map((registro) => registro.dataAtendimento), ...prontuarios.map((consulta) => consulta.createdAt)]
     .filter(Boolean)
@@ -161,6 +177,26 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
 
   const handleUsuarioStatusChange = async (usuarioId, ativo) => {
     await atualizarUsuarioAdmin(usuarioId, { ativo });
+  };
+
+  const concluirConsultaAgendada = async (consulta) => {
+    const agendamentoId = consulta.agendamento?.id;
+    const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
+    if (!agendamentoId || !token) return;
+
+    setConsultaStatus('');
+    try {
+      const response = await fetch(`http://localhost:3000/agendamentos/${agendamentoId}/concluir`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.erro || 'Não foi possível concluir o atendimento.');
+      await refetchConsultas();
+      setConsultaStatus('Atendimento concluído.');
+    } catch (error) {
+      setConsultaStatus(error.message);
+    }
   };
 
   const navegarParaSecao = (secao) => {
@@ -633,7 +669,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           {abaAtiva === 'dashboard' && (
             <div id="dashboard" className="summary-grid">
               <div className="summary-card summary-primary">
-                <span>Pets ativos</span>
+                <span>Pets cadastrados</span>
                 <strong>{pets.length}</strong>
               </div>
               <div className="summary-card">
@@ -843,14 +879,15 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
             <div id="consultas" className="record-panel">
               <div className="panel-header">
                 <h3>Consultas</h3>
-                {!isTutorView && <button type="button" className="panel-action">+ Marcar</button>}
+                {!isTutorView && <button type="button" className="panel-action" onClick={() => navegarParaSecao('agendamentos')}>+ Marcar</button>}
               </div>
 
-              {prontuarios.length > 0 ? prontuarios.map((consulta, index) => (
+              {consultaStatus && <p className="status-message" role="status">{consultaStatus}</p>}
+              {consultasVisiveis.length > 0 ? consultasVisiveis.map((consulta, index) => (
                 <article key={consulta.id || index} className="record-card">
                   <div className="record-topline">
-                    <span className="record-tag">Consulta</span>
-                    <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
+                    <span className="record-tag">Consulta · {consulta.status === 'concluida' ? 'Concluída' : 'Agendada'}</span>
+                    <time>{consulta.agendamento?.data ? `${new Date(consulta.agendamento.data).toLocaleDateString('pt-BR')} às ${consulta.agendamento.horario}` : consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}</time>
                   </div>
                   <h4>{consulta.motivoConsulta || 'Consulta veterinária'}</h4>
                   <div className="record-meta">
@@ -865,7 +902,9 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                   {!isTutorView && (
                     <div className="pet-edit-actions">
                       <button type="button" className="secondary-button">Desmarcar</button>
-                      <button type="button" className="primary-button small-button">Consultar</button>
+                      {consulta.status !== 'concluida' && consulta.agendamento?.id && ['administrador', 'veterinario'].includes(usuarioAtual?.perfil) && (
+                        <button type="button" className="primary-button small-button" onClick={() => concluirConsultaAgendada(consulta)}>Concluir atendimento</button>
+                      )}
                     </div>
                   )}
                 </article>
@@ -875,33 +914,36 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
             </div>
           )}
 
-          {(abaAtiva === 'dashboard' || abaAtiva === 'agendamentos') && (
+          {abaAtiva === 'agendamentos' && !isTutorView && <AgendamentosPage onConsultasAtualizadas={refetchConsultas} onAgendamentosAtualizados={refetchAgendamentos} />}
+
+          {abaAtiva === 'dashboard' && !isTutorView && (
             <div id="agendamentos" className="record-panel">
               <div className="panel-header">
                 <h3>Agendamentos</h3>
-                {!isTutorView && <button type="button" className="panel-action">+ Agendar</button>}
+                <button type="button" className="panel-action" onClick={() => navegarParaSecao('agendamentos')}>+ Agendar</button>
               </div>
 
-              {prontuarios.length > 0 ? prontuarios.map((consulta, index) => (
-                <article key={consulta.id || index} className="record-card">
+              {agendamentosLoading ? (
+                <p className="empty-state">Carregando agendamentos...</p>
+              ) : agendamentosError ? (
+                <p className="empty-state" role="alert">Não foi possível carregar os agendamentos.</p>
+              ) : agendamentosDashboard.length > 0 ? agendamentosDashboard.slice(0, 3).map((agendamento) => (
+                <article key={agendamento.id} className="record-card">
                   <div className="record-topline">
-                    <span className="record-tag">Agendamento</span>
-                    <time>{consulta.createdAt ? new Date(consulta.createdAt).toLocaleDateString('pt-BR') : 'Sem data'}</time>
+                    <span className="record-tag">{agendamento.status}</span>
+                    <time>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(agendamento.data))} às {agendamento.horario}</time>
                   </div>
-                  <h4>{consulta.motivoConsulta || 'Consulta agendada'}</h4>
+                  <h4>{agendamento.pet?.nome || 'Pet'} · {agendamento.pet?.especie || 'Espécie não informada'}</h4>
                   <div className="record-meta">
-                    <span>{consulta.pet?.nome || petSelecionado?.nome || 'Pet'}</span>
-                    <span>{consulta.veterinario?.nome || 'Veterinário'}</span>
+                    <span>{agendamento.veterinario?.nome || 'Veterinário'}</span>
+                    <span>{agendamento.observacoes || 'Sem observações'}</span>
                   </div>
-                  {!isTutorView && (
-                    <div className="pet-edit-actions">
-                      <button type="button" className="secondary-button">Desmarcar</button>
-                      <button type="button" className="primary-button small-button">Confirmar</button>
-                    </div>
-                  )}
+                  <div className="pet-edit-actions">
+                    <button type="button" className="primary-button small-button" onClick={() => navegarParaSecao('agendamentos')}>Abrir agenda</button>
+                  </div>
                 </article>
               )) : (
-                <p className="empty-state">Nenhum agendamento registrado.</p>
+                <p className="empty-state">Nenhum agendamento futuro.</p>
               )}
             </div>
           )}

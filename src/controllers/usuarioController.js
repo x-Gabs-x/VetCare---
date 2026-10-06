@@ -1,5 +1,14 @@
 const Usuario = require('../models/Usuario');
+const Pet = require('../models/Pet');
 const asyncHandler = require('../utils/asyncHandler');
+
+function validarUsuarioSemPetsVinculados(usuario, possuiPetsVinculados) {
+  if (possuiPetsVinculados) {
+    const erro = new Error('Nao e possivel excluir este usuario enquanto houver pets vinculados. Reatribua os pets a outro tutor primeiro.');
+    erro.status = 409;
+    throw erro;
+  }
+}
 
 const cadastrarUsuario = asyncHandler(async (req, res) => {
   const { nome, email, senha, perfil, telefone } = req.body;
@@ -108,6 +117,9 @@ const removerUsuario = asyncHandler(async (req, res) => {
     return res.status(404).json({ erro: 'Usuario nao encontrado.' });
   }
 
+  const possuiPetsVinculados = await Pet.exists({ tutor: usuario._id });
+  validarUsuarioSemPetsVinculados(usuario, Boolean(possuiPetsVinculados));
+
   await usuario.deleteOne();
 
   return res.status(200).json({ mensagem: 'Usuario removido com sucesso.' });
@@ -119,4 +131,5 @@ module.exports = {
   buscarUsuarioPorId,
   atualizarUsuario,
   removerUsuario,
+  validarUsuarioSemPetsVinculados,
 };

@@ -14,6 +14,14 @@ const agendamentoSchema = new mongoose.Schema(
       ref: 'Usuario',
       required: [true, 'O veterinario e obrigatorio'],
     },
+    veterinarioReserva: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario',
+    },
+    criadoPor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario',
+    },
     data: {
       type: Date,
       required: [true, 'A data e obrigatoria'],
@@ -31,9 +39,34 @@ const agendamentoSchema = new mongoose.Schema(
       },
       default: 'agendado',
     },
+    concluidaEm: Date,
+    concluidaPor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario',
+    },
     observacoes: {
       type: String,
       trim: true,
+    },
+    tipoAgendamento: {
+      type: String,
+      enum: ['comum', 'emergencia', 'encaixe'],
+      default: 'comum',
+    },
+    justificativaEmergencia: {
+      type: String,
+      trim: true,
+      required: function justificativaObrigatoria() {
+        return this.tipoAgendamento === 'emergencia';
+      },
+    },
+    blocoEmergencia: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'BlocoEmergencia',
+    },
+    estadoAnteriorDoBloco: {
+      type: String,
+      enum: ['reservado', 'liberado'],
     },
   },
   {

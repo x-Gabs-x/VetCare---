@@ -72,6 +72,8 @@ async function buscarAgendamentos() {
       populate: { path: 'tutor', select: camposUsuario },
     })
     .populate('veterinario', camposVeterinario)
+    .populate('veterinarioReserva', camposVeterinario)
+    .populate('concluidaPor', camposUsuario)
     .sort({ data: 1, horario: 1 });
 }
 
@@ -83,6 +85,7 @@ async function buscarConsultas() {
       populate: { path: 'tutor', select: camposUsuario },
     })
     .populate('veterinario', camposVeterinario)
+    .populate('agendamento')
     .sort({ createdAt: -1 });
 }
 
@@ -118,7 +121,7 @@ const resolvers = {
 
     pets: async (_, __, context) => {
       const filtro = temVisaoGeral(context.usuario)
-        ? { ativo: { $ne: false } }
+        ? {}
         : { tutor: context.usuario.id, ativo: { $ne: false } };
 
       return Pet.find(filtro)
@@ -127,7 +130,11 @@ const resolvers = {
     },
 
     pet: async (_, { id }, context) => {
-      const pet = await Pet.findOne({ _id: id, ativo: { $ne: false } }).populate('tutor', camposUsuario);
+      const filtro = temVisaoGeral(context.usuario)
+        ? { _id: id }
+        : { _id: id, tutor: context.usuario.id, ativo: { $ne: false } };
+
+      const pet = await Pet.findOne(filtro).populate('tutor', camposUsuario);
       if (pet) exigirAcessoAoPet(context.usuario, pet);
       return pet;
     },
@@ -145,7 +152,9 @@ const resolvers = {
           select: camposPet,
           populate: { path: 'tutor', select: camposUsuario },
         })
-        .populate('veterinario', camposVeterinario);
+        .populate('veterinario', camposVeterinario)
+        .populate('veterinarioReserva', camposVeterinario)
+        .populate('concluidaPor', camposUsuario);
     },
 
     consultas: async (_, __, context) => {
@@ -163,6 +172,7 @@ const resolvers = {
           populate: { path: 'tutor', select: camposUsuario },
         })
         .populate('veterinario', camposVeterinario)
+        .populate('agendamento')
         .sort({ createdAt: -1 });
     },
 
@@ -224,12 +234,15 @@ const resolvers = {
   Agendamento: {
     id: (agendamento) => idDoDocumento(agendamento),
     data: (agendamento) => agendamento.data?.toISOString(),
+    tipoAgendamento: (agendamento) => agendamento.tipoAgendamento || 'comum',
+    concluidaEm: (agendamento) => agendamento.concluidaEm?.toISOString(),
     createdAt: (agendamento) => agendamento.createdAt?.toISOString(),
     updatedAt: (agendamento) => agendamento.updatedAt?.toISOString(),
   },
 
   Consulta: {
     id: (consulta) => idDoDocumento(consulta),
+    status: (consulta) => consulta.status || 'agendada',
     createdAt: (consulta) => consulta.createdAt?.toISOString(),
     updatedAt: (consulta) => consulta.updatedAt?.toISOString(),
   },

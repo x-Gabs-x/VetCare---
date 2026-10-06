@@ -1221,3 +1221,13 @@ Quando um tutor tenta consultar as vacinas de um pet que não pertence a ele, a 
 ```
 
 Esse conjunto de exemplos confirma que o módulo de vacinas no GraphQL retorna corretamente os dados autorizados e preserva as regras de autorização da API REST.
+
+## Como funcionam os agendamentos
+
+Agendamentos comuns devem ser feitos com pelo menos 48 horas de antecedência. As consultas duram 30 minutos e ocorrem no horário comercial, entre 08:00 e 18:00.
+
+A clínica mantém blocos diários para emergências, distribuídos entre veterinários diferentes. A recepção ou a administração pode registrar uma emergência. Blocos não utilizados podem ser liberados pela recepção para encaixes no mesmo dia.
+
+Se uma emergência exigir o remanejamento de outro agendamento, a recepção ou a administração propõe um veterinário disponível e informa a justificativa. A administração valida a substituição, e a troca só é efetivada após a confirmação do tutor. Até lá, o veterinário original permanece como reserva. Propostas ainda pendentes uma hora antes da consulta geram um alerta no sistema.
+
+O veterinário responsável ou o veterinário de reserva registra a conclusão do atendimento.

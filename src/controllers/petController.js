@@ -134,7 +134,9 @@ const cadastrarPet = asyncHandler(async (req, res) => {
 });
 
 const listarPets = asyncHandler(async (req, res) => {
-  const filtro = temVisaoGeral(req.usuario) ? { ativo: { $ne: false } } : { tutor: req.usuario.id, ativo: { $ne: false } };
+  const filtro = temVisaoGeral(req.usuario)
+    ? {}
+    : { tutor: req.usuario.id, ativo: { $ne: false } };
 
   const pets = await Pet.find(filtro)
     .populate('tutor', 'nome email telefone perfil')
@@ -145,7 +147,10 @@ const listarPets = asyncHandler(async (req, res) => {
 
 
 const buscarPetPorId = asyncHandler(async (req, res) => {
-  const pet = await Pet.findOne({ _id: req.params.id, ativo: { $ne: false } }).populate(
+  const filtro = temVisaoGeral(req.usuario)
+    ? { _id: req.params.id }
+    : { _id: req.params.id, ativo: { $ne: false } };
+  const pet = await Pet.findOne(filtro).populate(
     'tutor',
     'nome email telefone perfil'
   );

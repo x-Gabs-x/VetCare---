@@ -61,6 +61,13 @@ export const GET_CONSULTAS = gql`
       motivoConsulta
       procedimentos
       observacoes
+      status
+      agendamento {
+        id
+        data
+        horario
+        status
+      }
       createdAt
       pet {
         id
@@ -79,6 +86,27 @@ export const GET_CONSULTAS = gql`
   }
 `;
 
+export const GET_AGENDAMENTOS = gql`
+  query GetAgendamentos {
+    agendamentos {
+      id
+      data
+      horario
+      status
+      observacoes
+      pet {
+        id
+        nome
+        especie
+      }
+      veterinario {
+        id
+        nome
+      }
+    }
+  }
+`;
+
 export const GET_CONSULTAS_POR_PET = gql`
   query GetConsultasPorPet($petId: ID!) {
     consultasPorPet(petId: $petId) {
@@ -86,6 +114,13 @@ export const GET_CONSULTAS_POR_PET = gql`
       motivoConsulta
       procedimentos
       observacoes
+      status
+      agendamento {
+        id
+        data
+        horario
+        status
+      }
       createdAt
       veterinario {
         id

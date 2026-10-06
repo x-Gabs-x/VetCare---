@@ -30,6 +30,11 @@ const typeDefs = `
     observacoes: String
     pet: Pet
     veterinario: Usuario!
+    veterinarioReserva: Usuario
+    tipoAgendamento: String!
+    justificativaEmergencia: String
+    concluidaEm: String
+    concluidaPor: Usuario
     createdAt: String
     updatedAt: String
   }
@@ -41,6 +46,8 @@ const typeDefs = `
     motivoConsulta: String!
     procedimentos: [String!]!
     observacoes: String
+    status: String!
+    agendamento: Agendamento
     createdAt: String
     updatedAt: String
   }

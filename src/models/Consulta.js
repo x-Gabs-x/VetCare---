@@ -15,6 +15,19 @@ const consultaSchema = new mongoose.Schema(
             required: [true, 'O veterinário responsável e obrigatorio']
         },
 
+        agendamento: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Agendamento",
+            unique: true,
+            sparse: true,
+        },
+
+        status: {
+            type: String,
+            enum: ['agendada', 'concluida'],
+            default: 'agendada',
+        },
+
         motivoConsulta: {
             type: String,
             required: [true, 'O motivo da consulta e obrigatorio'],
