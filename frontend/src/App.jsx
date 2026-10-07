@@ -45,6 +45,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
   const [mostrarFormPet, setMostrarFormPet] = useState(false);
   const [petFormStatus, setPetFormStatus] = useState('');
   const [consultaStatus, setConsultaStatus] = useState('');
+  const [vacinaStatus, setVacinaStatus] = useState('');
   const [petForm, setPetForm] = useState({ nome: '', especie: '', raca: '', idade: '', peso: '' });
   const [consultaForm, setConsultaForm] = useState({
     petId: '',
@@ -86,11 +87,6 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     skip: !petSelecionadoId || !isTutorView,
     fetchPolicy: 'cache-and-network',
   });
-  const { data: vacinasPetData } = useQuery(GET_VACINAS_POR_PET, {
-    variables: { petId: petSelecionadoId || '' },
-    skip: !petSelecionadoId || !isTutorView,
-    fetchPolicy: 'cache-and-network',
-  });
 
   const usuarioAtual = JSON.parse(localStorage.getItem('vetcare_usuario') || sessionStorage.getItem('vetcare_usuario') || '{}');
   const petsBase = petsData?.pets ?? [];
@@ -115,8 +111,14 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     String(agendamento.data).slice(0, 10) >= hojeNaClinica
   );
   const consultasPet = consultasPetData?.consultasPorPet ?? [];
-  const vacinasPet = vacinasPetData?.vacinasPorPet ?? [];
   const petSelecionado = petDetalheData?.pet || pets.find((pet) => pet.id === petSelecionadoId) || pets[0] || null;
+  const petVacinasId = petSelecionado?.id || '';
+  const { data: vacinasPetData, refetch: refetchVacinasPet } = useQuery(GET_VACINAS_POR_PET, {
+    variables: { petId: petVacinasId },
+    skip: !petVacinasId,
+    fetchPolicy: 'cache-and-network',
+  });
+  const vacinasPet = vacinasPetData?.vacinasPorPet ?? [];
   const prontuarios = isTutorView
     ? consultasPet
     : consultas.filter((consulta) => {
@@ -129,7 +131,11 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     .filter(Boolean)
     .sort((a, b) => new Date(b) - new Date(a))[0];
   const historicoProntuarios = [...prontuarioManual, ...prontuarios];
-  const vacinasAtuais = [...vacinasAdicionadas, ...vacinasPet];
+  const idsVacinasServidor = new Set(vacinasPet.map((vacina) => String(vacina.id)));
+  const vacinasAtuais = [
+    ...vacinasAdicionadas.filter((vacina) => !idsVacinasServidor.has(String(vacina.id))),
+    ...vacinasPet,
+  ];
 
   const totalPetsPages = Math.max(1, Math.ceil(pets.length / pageSize));
   const totalUsuariosPages = Math.max(1, Math.ceil(usuarios.length / pageSize));
@@ -434,12 +440,19 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     }
   };
 
-  const salvarProntuario = async () => {
-    if (!prontuarioForm.petId || !prontuarioForm.veterinario || !prontuarioForm.data || !usuarioAtual?.id) {
+  const salvarProntuario = async (tipoForcado) => {
+    const tipoRegistro = typeof tipoForcado === 'string' ? tipoForcado : prontuarioForm.tipo;
+    const petIdRegistro = prontuarioForm.petId || petSelecionadoId || petSelecionado?.id || '';
+    const veterinarioRegistro = prontuarioForm.veterinario || (usuarioAtual?.perfil === 'veterinario' ? usuarioAtual.id : '');
+
+    if (!petIdRegistro || !veterinarioRegistro || !prontuarioForm.data || !usuarioAtual?.id) {
+      if (tipoRegistro === 'vacina') {
+        setVacinaStatus('Preencha a data da aplicação e selecione o veterinário.');
+      }
       return;
     }
 
-    const petSelecionadoNoRegistro = pets.find((pet) => pet.id === prontuarioForm.petId) || petSelecionado;
+    const petSelecionadoNoRegistro = pets.find((pet) => pet.id === petIdRegistro) || petSelecionado;
     const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token');
 
     if (!token) {
@@ -447,8 +460,9 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
     }
 
     try {
-      if (prontuarioForm.tipo === 'vacina') {
+      if (tipoRegistro === 'vacina') {
         if (!prontuarioForm.tipoVacina) {
+          setVacinaStatus('Informe o tipo da vacina.');
           return;
         }
 
@@ -459,8 +473,8 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            pet: prontuarioForm.petId,
-            veterinario: prontuarioForm.veterinario,
+            pet: petIdRegistro,
+            veterinario: veterinarioRegistro,
             tipo: prontuarioForm.tipoVacina,
             dataAplicacao: prontuarioForm.data,
             dataPrevistaReforco: prontuarioForm.reforco || null,
@@ -480,11 +494,13 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           dataAplicacao: result.dataAplicacao || prontuarioForm.data,
           dataPrevistaReforco: result.dataPrevistaReforco || prontuarioForm.reforco || null,
           observacoes: result.observacoes || prontuarioForm.observacoes || 'Vacina registrada no prontuário.',
-          veterinario: veterinarios.find((veterinario) => veterinario.id === prontuarioForm.veterinario) || { nome: 'Veterinário' },
+          veterinario: veterinarios.find((veterinario) => veterinario.id === veterinarioRegistro) || { nome: 'Veterinário' },
           pet: { nome: petSelecionadoNoRegistro?.nome || 'Pet' },
         };
 
         setVacinasAdicionadas((prev) => [novaVacina, ...prev]);
+        setVacinaStatus('Vacina registrada com sucesso.');
+        refetchVacinasPet();
       } else {
         if (!prontuarioForm.motivo) {
           return;
@@ -497,8 +513,8 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            pet: prontuarioForm.petId,
-            veterinario: prontuarioForm.veterinario,
+            pet: petIdRegistro,
+            veterinario: veterinarioRegistro,
             motivoConsulta: prontuarioForm.motivo,
             procedimentos: prontuarioForm.procedimentos
               ? prontuarioForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean)
@@ -519,7 +535,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           motivoConsulta: result.consulta?.motivoConsulta || prontuarioForm.motivo,
           procedimentos: result.consulta?.procedimentos || (prontuarioForm.procedimentos ? prontuarioForm.procedimentos.split('\n').map((item) => item.trim()).filter(Boolean) : ['Atendimento registrado']),
           observacoes: result.consulta?.observacoes || prontuarioForm.observacoes || 'Consulta registrada no prontuário.',
-          veterinario: veterinarios.find((veterinario) => veterinario.id === prontuarioForm.veterinario) || { nome: 'Veterinário' },
+          veterinario: veterinarios.find((veterinario) => veterinario.id === veterinarioRegistro) || { nome: 'Veterinário' },
           pet: { nome: petSelecionadoNoRegistro?.nome || 'Pet' },
         };
 
@@ -540,6 +556,9 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
       setMostrarFormProntuario(false);
     } catch (error) {
       console.error(error);
+      if (tipoRegistro === 'vacina') {
+        setVacinaStatus(error.message || 'Não foi possível registrar a vacina.');
+      }
     }
   };
 
@@ -1018,11 +1037,22 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                           <span>Data prevista do reforço</span>
                           <input type="date" value={prontuarioForm.reforco} onChange={handleProntuarioFieldChange} name="reforco" />
                         </label>
+                        <label>
+                          <span>Veterinário</span>
+                          <select name="veterinario" value={prontuarioForm.veterinario} onChange={handleProntuarioFieldChange}>
+                            <option value="">Selecione o veterinário</option>
+                            {veterinarios.length === 0 && <option value="" disabled>Nenhum veterinário cadastrado</option>}
+                            {veterinarios.map((veterinario) => (
+                              <option key={veterinario.id} value={veterinario.id}>{veterinario.nome}</option>
+                            ))}
+                          </select>
+                        </label>
                       </div>
 
+                      {vacinaStatus && <p className="empty-state">{vacinaStatus}</p>}
                       <div className="pet-edit-actions">
                         <button type="button" className="secondary-button" onClick={() => setProntuarioForm((prev) => ({ ...prev, tipoVacina: '', data: '', reforco: '', observacoes: '' }))}>Cancelar</button>
-                        <button type="button" className="primary-button small-button" onClick={salvarProntuario}>Salvar vacinação</button>
+                        <button type="button" className="primary-button small-button" onClick={() => salvarProntuario('vacina')}>Salvar vacinação</button>
                       </div>
                     </div>
                   </>
@@ -1038,8 +1068,8 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                     <div key={vacina.id} style={{ marginTop: '12px', borderTop: '1px solid #edf2f5', paddingTop: '12px' }}>
                       <h4>{vacina.tipo}</h4>
                       <ul>
-                        <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
-                        <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
+                        <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</li>
+                        <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Sem reforço'}</li>
                         {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
                       </ul>
                     </div>
@@ -1352,8 +1382,8 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
                           <span>{vacina.pet?.nome || petSelecionado?.nome}</span>
                         </div>
                         <ul>
-                          <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR')}</li>
-                          <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR') : 'Sem reforço'}</li>
+                          <li>Aplicação: {new Date(vacina.dataAplicacao).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</li>
+                          <li>Reforço: {vacina.dataPrevistaReforco ? new Date(vacina.dataPrevistaReforco).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Sem reforço'}</li>
                           {vacina.observacoes && <li>Observações: {vacina.observacoes}</li>}
                         </ul>
                       </div>

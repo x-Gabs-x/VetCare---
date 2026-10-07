@@ -555,7 +555,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"pet\": \"6a9f79480a7bc33122937859\",\n  \"tipo\": \"V10\",\n  \"dataAplicacao\": \"2026-09-07\",\n  \"dataPrevistaReforco\": \"2027-09-07\",\n  \"observacoes\": \"Primeira dose aplicada\"\n}",
+              "raw": "{\n  \"pet\": \"{{petId}}\",\n  \"veterinario\": \"{{veterinarioId}}\",\n  \"tipo\": \"V10\",\n  \"dataAplicacao\": \"{{dataAplicacao}}\",\n  \"dataPrevistaReforco\": \"{{dataReforco}}\",\n  \"observacoes\": \"Primeira dose aplicada\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -572,7 +572,68 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// datas sempre relativas a hoje, pra o lembrete aparecer na lista (proximos 30 dias)",
+                  "const hoje = new Date();",
+                  "const reforco = new Date();",
+                  "reforco.setDate(reforco.getDate() + 10);",
+                  "pm.collectionVariables.set('dataAplicacao', hoje.toISOString().slice(0, 10));",
+                  "pm.collectionVariables.set('dataReforco', reforco.toISOString().slice(0, 10));",
+                  "",
+                  "// se o petId ainda for o placeholder, usa o primeiro pet que existir no banco",
+                  "const petId = pm.collectionVariables.get('petId');",
+                  "if (!petId || petId === 'ID_DO_PET') {",
+                  "  pm.sendRequest({",
+                  "    url: pm.variables.replaceIn('{{baseUrl}}/pets'),",
+                  "    method: 'GET',",
+                  "    header: { Authorization: 'Bearer ' + pm.environment.get('token') }",
+                  "  }, (erro, resposta) => {",
+                  "    const pets = erro ? [] : resposta.json();",
+                  "    if (!Array.isArray(pets) || pets.length === 0) {",
+                  "      throw new Error('Nenhum pet cadastrado. Rode \"Cadastrar pet\" primeiro.');",
+                  "    }",
+                  "    pm.collectionVariables.set('petId', pets[0]._id);",
+                  "  });",
+                  "}",
+                  "",
+                  "// se o veterinarioId ainda for o placeholder, usa o primeiro veterinario ativo do banco",
+                  "const vetId = pm.collectionVariables.get('veterinarioId');",
+                  "if (!vetId || vetId.startsWith('ID_')) {",
+                  "  pm.sendRequest({",
+                  "    url: pm.variables.replaceIn('{{baseUrl}}/usuarios?perfil=veterinario'),",
+                  "    method: 'GET',",
+                  "    header: { Authorization: 'Bearer ' + pm.environment.get('token') }",
+                  "  }, (erro, resposta) => {",
+                  "    const usuarios = erro ? [] : resposta.json();",
+                  "    const vet = Array.isArray(usuarios) ? usuarios.find(u => u.ativo !== false) : null;",
+                  "    if (!vet) {",
+                  "      throw new Error('Nenhum veterinario encontrado. Faca login como veterinario ou administrador.');",
+                  "    }",
+                  "    pm.collectionVariables.set('veterinarioId', vet._id);",
+                  "  });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const vacina = pm.response.json();",
+                  "  pm.collectionVariables.set('vacinaId', vacina._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Listar vacinas por pet",
@@ -580,13 +641,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/vacinas/6a9f79480a7bc33122937859",
+              "raw": "{{baseUrl}}/vacinas/{{petId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "vacinas",
-                "6a9f79480a7bc33122937859"
+                "{{petId}}"
               ]
             }
           },
@@ -623,13 +684,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/vacinas/6a9f7a440a7bc3312293787a",
+              "raw": "{{baseUrl}}/vacinas/{{vacinaId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "vacinas",
-                "6a9f7a440a7bc3312293787a"
+                "{{vacinaId}}"
               ]
             }
           },
@@ -944,7 +1005,7 @@
               "mode": "graphql",
               "graphql": {
                 "query": "query VacinasPorPet($petId: ID!) {\r\n  vacinasPorPet(petId: $petId) {\r\n    id\r\n    tipo\r\n    dataAplicacao\r\n    dataPrevistaReforco\r\n    observacoes\r\n    pet {\r\n      id\r\n      nome\r\n      especie\r\n      raca\r\n      idade\r\n      peso\r\n    }\r\n    veterinario {\r\n      id\r\n      nome\r\n      email\r\n      perfil\r\n    }\r\n    createdAt\r\n    updatedAt\r\n  }\r\n}",
-                "variables": "{\r\n  \"petId\": \"6aa22e3824766efdb3b13839\"\r\n}"
+                "variables": "{\r\n  \"petId\": \"{{petId}}\"\r\n}"
               }
             },
             "url": {
