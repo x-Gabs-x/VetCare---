@@ -1006,7 +1006,7 @@ function PetsProntuariosDashboard({ onLogout, perfil = 'administrador' }) {
           <div id="vacinas" className="record-panel">
             <div className="panel-header">
               <h3>Vacinas</h3>
-              {!isTutorView && <button type="button" className="panel-action">+ Agendar</button>}
+              {!isTutorView && <button type="button" className="panel-action" onClick={() => navegarParaSecao('agendamentos')}>+ Agendar</button>}
             </div>
 
             {petSelecionado ? (
