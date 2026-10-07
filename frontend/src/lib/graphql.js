@@ -1,8 +1,7 @@
 const API_URL = 'http://localhost:3000/graphql'
 
 export async function graphqlRequest(query, variables = {}) {
-  const token = localStorage.getItem('token')
-
+const token = localStorage.getItem('vetcare_token') || sessionStorage.getItem('vetcare_token')
   const resposta = await fetch(API_URL, {
     method: 'POST',
     headers: {
