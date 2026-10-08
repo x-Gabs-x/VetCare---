@@ -2,19 +2,9 @@
 
 ## Execução local
 
-Requisitos: Node.js (LTS), npm e acesso a uma instância MongoDB (o grupo usa o MongoDB Atlas).
-
 ### 1. Configurar o `.env`
 
-Na pasta raiz do projeto, crie um arquivo `.env` com as variáveis enviadas na atividade:
-
-```env
-MONGO_URI=...
-JWT_SECRET=...
-PORT=3000
-```
-
-Esse arquivo não é versionado e nunca deve ser enviado ao Git.
+Na pasta raiz do projeto, crie um arquivo `.env` com as variáveis enviadas à parte.
 
 ### 2. Backend (porta 3000)
 
@@ -25,7 +15,7 @@ npm install
 npm run dev
 ```
 
-O `npm run dev` reinicia o servidor sozinho a cada alteração (`npm start` sobe sem reinício automático). Quando aparecerem as mensagens `[MongoDB] Conectado com sucesso.` e `[Servidor] Rodando em http://localhost:3000`, a API está no ar. O GraphQL fica em `http://localhost:3000/graphql`.
+O `npm run dev` reinicia o servidor sozinho a cada alteração (`npm start` sobe sem reinício automático). Quando aparecerem as mensagens `[MongoDB] Conectado com sucesso.` e `[Servidor] Rodando em http://localhost:3000`, a API está no ar.
 
 ### 3. Frontend (porta 5173)
 
